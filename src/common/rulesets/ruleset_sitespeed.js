@@ -129,6 +129,8 @@ YSLOW.registerRule({
 
 
 
+
+
 YSLOW.registerRuleset({ 
     id: 'sitespeed',
     name: 'Sitespeed.io rules v0.8',
@@ -184,6 +186,7 @@ YSLOW.registerRuleset({
         yfavicon: {},
         _3po_asyncjs: {},
     	_3po_jsonce: {}
+
     },
     weights: {
         ynumreq: 8,
@@ -209,7 +212,7 @@ YSLOW.registerRuleset({
         yimgnoscale: 3,
         yfavicon: 2,
         _3po_asyncjs: 10,
- 	   	_3po_jsonce: 10
+ 	   	_3po_jsonce: 10	   	
     }
 
 });
