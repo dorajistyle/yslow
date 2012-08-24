@@ -1,4 +1,6 @@
-
+/*
+Rules borrowed from Stoyan Stefanov
+*/
 var YSLOW3PO = {};
 YSLOW3PO.is3p = function (url) {
   
@@ -132,20 +134,13 @@ YSLOW.registerRuleset({
     name: 'Sitespeed.io rules v0.8',
     rules: {
         ynumreq: {
-        	id: 'apa',
-        	config: {
-        	max_js: 1,
+        	// We are a little harder than standard yslow
         	// the number of scripts allowed before we start penalizing
-        	points_js: 4,
-        	// penalty points for each script over the maximum
-        	max_css: 1,
+        	max_js: 2,
         	// number of external stylesheets allowed before we start penalizing
-        	points_css: 4,
-        	// penalty points for each external stylesheet over the maximum
-        	max_cssimages: 1,
-        	// // number of background images allowed before we start penalizing
-        	points_cssimages: 3 // penalty points for each bg image over the maximum
-    		}
+        	max_css: 2,
+        	// number of background images allowed before we start penalizing
+        	max_cssimages: 3
         },
         yemptysrc: {},
         yexpires: {},
