@@ -13,7 +13,8 @@ YSLOW3PO.is3p = function (url) {
     'code.jquery.com',
     'platform.linkedin.com',
     '.disqus.com',
-    '.lognornal.com'
+    '.lognornal.com',
+    'assets.pinterest.com'
   ];
   var hostname = YSLOW.util.getHostname(url);
   var re;
@@ -132,7 +133,7 @@ YSLOW.registerRule({
   info: 'Loading a specific stylesheet for printing slows down the page, ' +
         'even though it is not used',
   category: ['css'],
-  config: {},
+  config: {points: 20},
   url: 'http://sitespeed.io/rules/#cssprint',
   
   lint: function (doc, cset, config) {
@@ -155,7 +156,7 @@ YSLOW.registerRule({
         offenders.push(comps[i]);
       }
     }
-      score = 100 - offenders.length * 20;
+      score = 100 - offenders.length * parseInt(config.points, 20);
       
       return {
       score: score,
@@ -172,8 +173,8 @@ YSLOW.registerRule({
 
 YSLOW.registerRule({
   id: 'cssinhead',
-  name: 'CSS in head ',
-  info: 'Make sure css in head is loaded from same domain as document',
+  name: 'Load CSS in head from document domain',
+  info: 'Make sure css in head is loaded from same domain as document, in order to have a better user experience',
   category: ['css'],
   config: {points: 5},
   url: 'http://sitespeed.io/rules/#cssinhead',
@@ -208,84 +209,106 @@ YSLOW.registerRule({
         }
 
         return {
-            score: score,
-            message: 'Docdomain:' + docDomain + ' domains:' + domains+ ' cssinhead:' + cssinhead + " comp:" + comps,
-            /*message: (offenders.length > 1) ? YSLOW.util.plural(
+           score: score,           
+           message: (offenders.length > 1) ? YSLOW.util.plural(
                 'There %are% %num% stylesheet%s%',
                 offenders.length
-            ) + ' loaded from a domain that is not the document domain' : '',
-            */
+            ) + ' in head that are loaded from a domain that is not the document domain' : '',
             components: offenders
         };
     }
 });
 
 
+YSLOW.registerRule({
+  id: 'loadasyncinhead',
+  name: 'Never load JS syncrhonously in head',
+  info: "Use the JavaScript snippets that load the JS files asyncrhonously in head " +
+        "in order to speed up the user experience.",
+  category: ['js'],
+  config: {points: 10},
+  url: 'http://sitespeed.io/rules/#asyncjs',
+
+  lint: function (doc, cset, config) {
+    var scripts = doc.getElementsByTagName('script'), 
+    comps = cset.getComponentsByType('js'),
+    comp, offenders = {}, 
+    offender_comps = [],  
+    score = 100;
+  
+    for (i = 0, len = scripts.length; i < len; i++) {
+      comp = scripts[i];
+      if (comp.parentNode.tagName === 'HEAD') {
+        if (comp.src) {
+          if (!comp.async && !comp.defer) {
+            offenders[comp.src] = 1;
+          }
+        }
+      }
+    }
+
+    for (var i = 0; i < comps.length; i++) {
+      if (offenders[comps[i].url]) {
+        offender_comps.push(comps[i]);
+      }
+    }
+
+    var message = offender_comps.length === 0 ? '' :
+      'The following ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
+        ' not loaded asynchronously in head:';
+    score -= offender_comps.length * parseInt(config.points, 10)
+  
+    return {
+      score: score,
+      message: message,
+      components: offender_comps
+    };
+  }
+});
+
 
 YSLOW.registerRuleset({ 
     id: 'sitespeed',
     name: 'Sitespeed.io rules v0.8',
     rules: {
-        ynumreq: {
-        	// We are a little harder than standard yslow
-        	// the number of scripts allowed before we start penalizing
-        	max_js: 2,
-        	// number of external stylesheets allowed before we start penalizing
-        	max_css: 2,
-        	// number of background images allowed before we start penalizing
-        	max_cssimages: 3
+        /*ynumreq: {
+	// We are a little harder than standard yslow
+	// the number of scripts allowed before we start penalizing
+	max_js: 2,
+	// number of external stylesheets allowed before we start penalizing
+	max_css: 2,
+	// number of background images allowed before we start penalizing
+	max_cssimages: 3
         },
-        cssprint: {},
-        cssinhead: {},
         yemptysrc: {},
         yexpires: {},
-        //  3
         ycompress: {},
-        //  4
         ycsstop: {},
-        //  5
         yjsbottom: {},
-        //  6
         yexpressions: {},
-        //  7
         yexternal: {},
-        //  8
         ydns: {},
-        //  9
         yminify: {},
-        // 10
         yredirects: {},
-        // 11
         ydupes: {},
-        // 12
         yetags: {},
-        // 13
         yxhr: {},
-        // 14
         yxhrmethod: {},
-        // 16
         ymindom: {},
-        // 19
         yno404: {},
-        // 22
         ymincookie: {},
-        // 23
         ycookiefree: {},
-        // 24
         ynofilter: {},
-        // 28
         yimgnoscale: {},
-        // 31
         yfavicon: {},
         _3po_asyncjs: {},
-	     _3po_jsonce: {}
-
-
+	      _3po_jsonce: {},
+        cssprint: {},*/
+        cssinhead: {}
+        // loadasyncinhead: {}
     },
     weights: {
         ynumreq: 8,
-        cssprint: 1,
-        cssinhead: 8,
         yemptysrc: 30,
         yexpires: 10,
         ycompress: 8,
@@ -308,7 +331,10 @@ YSLOW.registerRuleset({
         yimgnoscale: 3,
         yfavicon: 2,
         _3po_asyncjs: 10,
-		    _3po_jsonce: 10		
+		    _3po_jsonce: 10,
+        cssprint: 1,
+        cssinhead: 8,
+        loadasyncinhead: 5	
     }
 
 });
