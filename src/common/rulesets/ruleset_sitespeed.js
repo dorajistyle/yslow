@@ -1,6 +1,7 @@
 /*
-Rules borrowed from Stoyan Stefanov
+Rule borrowed from Stoyan Stefanov
 */
+
 var YSLOW3PO = {};
 YSLOW3PO.is3p = function (url) {
   
@@ -30,8 +31,8 @@ YSLOW3PO.is3p = function (url) {
 
 YSLOW.registerRule({
   id: '_3po_asyncjs',
-  name: 'Load 3rd party JS asyncrhonously',
-  info: "Use the JavaScript snippets that load the JS files asyncrhonously " +
+  name: 'Load 3rd party JS asynchronously',
+  info: "Use the JavaScript snippets that load the JS files asynchronously " +
         "in order to speed up the user experience.",
   category: ['js'],
   config: {},
@@ -127,6 +128,7 @@ YSLOW.registerRule({
   }
 });
 
+
 YSLOW.registerRule({
   id: 'cssprint',
   name: 'Do not load print stylesheets, use @media',
@@ -172,62 +174,64 @@ YSLOW.registerRule({
 });  
 
 YSLOW.registerRule({
-  id: 'cssinhead',
+  id: 'cssinheaddomain',
   name: 'Load CSS in head from document domain',
-  info: 'Make sure css in head is loaded from same domain as document, in order to have a better user experience',
+  info: 'Make sure css in head is loaded from same domain as document, in order to have a better user experience and minimize dns lookups',
   category: ['css'],
-  config: {points: 5},
-  url: 'http://sitespeed.io/rules/#cssinhead',
+  config: {points: 10},
+  url: 'http://sitespeed.io/rules/#cssinheaddomain',
 
-    lint: function (doc, cset, config) {
-        var i, len, score, domain, docDomain,
-            cssinhead = [],
-            domains = [],
-            offenders = [],
-            comps = cset.getComponentsByType('css');
+  lint: function (doc, cset, config) {
+ 
+  var scripts = doc.getElementsByTagName('link'), 
+    comps = cset.getComponentsByType('css'),
+    comp, docdomain, src, offenders = {}, 
+    offender_comps = [],  
+    score = 100;
+  
+    docdomain = YSLOW.util.getHostname(cset.doc_comp.url);
 
-        for (i = 0, len = comps.length; i< len; i += 1) {
-    
-             if (comps[i].containerNode === 'head'){
-                cssinhead.push(comps[i]);
-            } 
-        }
+    for (i = 0, len = scripts.length; i < len; i++) {
+      comp = scripts[i];
+            src = comp.href || comp.getAttribute('href');
+            if (src && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
+               if (comp.parentNode.tagName === 'HEAD') {
+                offenders[src] = 1;
+               }
 
-        docDomain = YSLOW.util.getHostname(cset.doc_comp.url);
-        domains = YSLOW.util.getUniqueDomains(cssinhead);
-
-         for (var i = 0, len = domains.length; i < len; i += 1) {
-            domain = domains[i];
-            if (domain !== docDomain) {
-                offenders.push(domain);
             }
         }
 
-        score = 100;
-        if (offenders.length >0) {
-              score -= 1 + offenders.length * parseInt(config.points, 5);
+    for (var i = 0; i < comps.length; i++) {
+      if (offenders[comps[i].url]) {
+        if (docdomain !== YSLOW.util.getHostname(comps[i].url)) {
+          offender_comps.push(comps[i]);
         }
+      }
+    }
 
-        return {
-           score: score,           
-           message: (offenders.length > 1) ? YSLOW.util.plural(
-                'There %are% %num% stylesheet%s%',
-                offenders.length
-            ) + ' in head that are loaded from a domain that is not the document domain' : '',
-            components: offenders
-        };
+    var message = offender_comps.length === 0 ? '' :
+      'The following ' + YSLOW.util.plural('%num% css', offender_comps.length) +
+        ' are loaded from a different domain inside head';
+    score -= offender_comps.length * parseInt(config.points, 10)
+  
+    return {
+      score: score,
+      message: message,
+      components: offender_comps
+    };
     }
 });
 
 
 YSLOW.registerRule({
-  id: 'loadasyncinhead',
-  name: 'Never load JS syncrhonously in head',
-  info: "Use the JavaScript snippets that load the JS files asyncrhonously in head " +
+  id: 'syncjsinhead',
+  name: 'Never load JS synchronously in head',
+  info: "Use the JavaScript snippets that load the JS files asynchronously in head " +
         "in order to speed up the user experience.",
   category: ['js'],
   config: {points: 10},
-  url: 'http://sitespeed.io/rules/#asyncjs',
+  url: 'http://sitespeed.io/rules/#syncjsinhead',
 
   lint: function (doc, cset, config) {
     var scripts = doc.getElementsByTagName('script'), 
@@ -271,14 +275,14 @@ YSLOW.registerRuleset({
     id: 'sitespeed',
     name: 'Sitespeed.io rules v0.8',
     rules: {
-        /*ynumreq: {
-	// We are a little harder than standard yslow
-	// the number of scripts allowed before we start penalizing
-	max_js: 2,
-	// number of external stylesheets allowed before we start penalizing
-	max_css: 2,
-	// number of background images allowed before we start penalizing
-	max_cssimages: 3
+        ynumreq: {
+	         // We are a little harder than standard yslow
+	         // the number of scripts allowed before we start penalizing
+	         max_js: 2,
+	         // number of external stylesheets allowed before we start penalizing
+	         max_css: 2,
+	         // number of background images allowed before we start penalizing
+	         max_cssimages: 3
         },
         yemptysrc: {},
         yexpires: {},
@@ -303,9 +307,9 @@ YSLOW.registerRuleset({
         yfavicon: {},
         _3po_asyncjs: {},
 	      _3po_jsonce: {},
-        cssprint: {},*/
-        cssinhead: {}
-        // loadasyncinhead: {}
+        cssprint: {},
+        cssinheaddomain: {},
+        syncjsinhead: {}
     },
     weights: {
         ynumreq: 8,
@@ -333,8 +337,8 @@ YSLOW.registerRuleset({
         _3po_asyncjs: 10,
 		    _3po_jsonce: 10,
         cssprint: 1,
-        cssinhead: 8,
-        loadasyncinhead: 5	
+        cssinheaddomain: 8,
+        syncjsinhead: 10	
     }
 
 });
