@@ -223,6 +223,9 @@ YSLOW.registerRule({
 });
 
 
+/** Alternative to yjsbottom rule that doesn't seems to work right now 
+with phantomjs 
+*/
 YSLOW.registerRule({
   id: 'syncjsinhead',
   name: 'Never load JS synchronously in head',
@@ -308,7 +311,7 @@ YSLOW.registerRuleset({
 	         // number of external stylesheets allowed before we start penalizing
 	         max_css: 2,
 	         // number of background images allowed before we start penalizing
-	         max_cssimages: 3
+	         max_cssimages: 2
         },
         yemptysrc: {},
         yexpires: {},
