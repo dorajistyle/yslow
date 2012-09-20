@@ -29,7 +29,6 @@ YSLOW3PO.is3p = function (url) {
 }
 
 
-
 YSLOW.registerRule({
   id: '_3po_asyncjs',
   name: 'Load 3rd party JS asynchronously',
@@ -129,7 +128,7 @@ YSLOW.registerRule({
   }
 });
 
-/* End of loan */
+/* End */
 
 
 var SITESPEEDHELP = {};
@@ -153,11 +152,11 @@ SITESPEEDHELP.getTLD =  function (host){
   return tld;
 };
 
-/* End of loan*/
+/* End */
 
 YSLOW.registerRule({
   id: 'cssprint',
-  name: 'Do not load print stylesheets, use @media',
+  name: 'Do not load print stylesheets, use @media type print instead',
   info: 'Loading a specific stylesheet for printing slows down the page, ' +
         'even though it is not used',
   category: ['css'],
@@ -238,7 +237,7 @@ YSLOW.registerRule({
 
     var message = offender_comps.length === 0 ? '' :
       'The following ' + YSLOW.util.plural('%num% css', offender_comps.length) +
-        ' are loaded from a different domain inside head';
+        ' are loaded from a different domain inside head, causing DNS lookups before page is rendered.';
     score -= offender_comps.length * parseInt(config.points, 10)
   
     return {
@@ -287,8 +286,8 @@ YSLOW.registerRule({
     }
 
     var message = offender_comps.length === 0 ? '' :
-      'The following ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
-        ' not loaded asynchronously in head:';
+      'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
+        ' that are not loaded asynchronously in head, that will block the rendering.';
     score -= offender_comps.length * parseInt(config.points, 10)
   
     return {
@@ -315,8 +314,8 @@ YSLOW.registerRule({
     score = 100 - comps.length * parseInt(config.points, 10);
 
     var message = comps.length === 0 ? '' :
-      'The following ' + YSLOW.util.plural('%num% font%s%', comps.length) +
-        ' will add extra overhead.';    
+      'There are' + YSLOW.util.plural('%num% font%s%', comps.length) +
+        ' that will add extra overhead.';    
 
     return {
       score: score,
@@ -351,8 +350,8 @@ YSLOW.registerRule({
     if (score<0) score = 0;
 
     var message = score === 100 ? '' :
-      'The total number of requests:' + comps.length + 
-        ' are too many';    
+      'The page uses ' + comps.length + 
+        ' requests, that is too many to make the page load fast.';    
     var offenders = score === 100 ? '' : comps;    
 
     return {
