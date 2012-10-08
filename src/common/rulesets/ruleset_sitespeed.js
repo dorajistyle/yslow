@@ -584,7 +584,7 @@ YSLOW.registerRuleset({
         avoidfont: 1,
         totalrequests: 10,
         expiresmod: 10,
-        spof: 20
+        spof: 10
     }
 
 });
