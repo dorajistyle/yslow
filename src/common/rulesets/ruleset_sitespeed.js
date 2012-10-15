@@ -587,7 +587,8 @@ YSLOW.registerRuleset({
         avoidfont: 1,
         totalrequests: 10,
         expiresmod: 10,
-        spof: 10
+        // Low since we fetch all different domains, not only 3rd parties
+        spof: 5
     }
 
 });
