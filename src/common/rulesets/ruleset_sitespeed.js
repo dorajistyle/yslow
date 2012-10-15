@@ -515,7 +515,7 @@ YSLOW.registerRule({
 
 YSLOW.registerRuleset({ 
     id: 'sitespeed.io',
-    name: 'Sitespeed.io rules v0.9',
+    name: 'Sitespeed.io rules v1.0',
     rules: {
         ynumreq: {
 	         // We are a little harder than standard yslow
