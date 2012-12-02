@@ -365,6 +365,46 @@ YSLOW.registerRule({
   }
 });
 
+// Exprimental rule
+YSLOW.registerRule({
+  id: 'toomuchjs',
+  name: 'Too much javascript compared to text content',
+  info: 'The javascript you have, need to actually add functionality to your page, if you load too much javascript in the browser, the page will be slow.',
+  category: ['js'],
+  config: {points: 5},
+  url: 'http://sitespeed.io/rules/#toomuchjs',
+
+  lint: function (doc, cset, config) {
+  
+  var jsComponents = cset.getComponentsByType('js'),
+   totalJsSize = 0, 
+   jspercentage,
+   score,
+   docSize = cset.getComponentsByType('doc')[0].size;
+
+    // Get the size of all js files
+    for (i = 0, len = jsComponents.length; i < len; i += 1) {
+        totalJsSize = totalJsSize + jsComponents[i].size
+        }
+
+    // convert to kb & 2 decimals and percentage    
+    jspercentage =  Math.round((totalJsSize / (totalJsSize  + docSize))*10000)/100;   
+
+    if (jspercentage < 40)
+      score = 100;
+    else if (jspercentage < 50)
+       score = 80;
+     else score = 50;
+
+    var message = score == 100 ? '' :  'The content of the page concist of ' + jspercentage + '% javascript, that is too much.';
+    return {
+      score: score,
+      message: message,
+      components: []
+    };
+  }
+});
+
 
 YSLOW.registerRule({
   id: 'spof',
@@ -511,8 +551,6 @@ YSLOW.registerRule({
     }
 });
 
-
-
 YSLOW.registerRuleset({ 
     id: 'sitespeed.io-1.4',
     name: 'Sitespeed.io rules v1.4',
@@ -555,7 +593,9 @@ YSLOW.registerRuleset({
         avoidfont: {},
         totalrequests: {},
         expiresmod: {},
-        spof: {}
+        spof: {},
+        toomuchjs: {}
+
     },
     weights: {
         ynumreq: 8,
@@ -588,7 +628,9 @@ YSLOW.registerRuleset({
         totalrequests: 10,
         expiresmod: 10,
         // Low since we fetch all different domains, not only 3rd parties
-        spof: 5
+        spof: 5,
+        toomuchjs: 1
+
     }
 
 });
