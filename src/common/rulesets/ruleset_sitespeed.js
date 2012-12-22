@@ -152,6 +152,20 @@ SITESPEEDHELP.getTLD =  function (host){
   return tld;
 };
 
+SITESPEEDHELP.getSynchronouslyJavascripts =  function (js){
+var syncJs = [];
+
+for (var i = 0; i < js.length; i++) {
+  if (js[i].src) {
+    if (!js[i].async && !js[i].defer) {
+    syncJs.push(js[i]);
+    }
+  }
+}
+
+return syncJs;
+};
+
 /* End */
 
 YSLOW.registerRule({
@@ -551,9 +565,83 @@ YSLOW.registerRule({
     }
 });
 
+YSLOW.registerRule({
+  id: 'inlinecsswhenfewrequest',
+  name: 'Do not load css stylesheet files when the page has few request',
+  info: 'When a page has few requests, it is better to inline the css, to make the page to start render as early as possible',
+  category: ['css'],
+  config: {points: 20, limit: 15,  types: ['css', 'js', 'image', 'cssimage', 'flash', 'favicon']},
+  url: 'http://sitespeed.io/rules/#inlinecsswhenfewrequest',
+
+  lint: function (doc, cset, config) {
+  
+  
+  var comps = cset.getComponentsByType(config.types),
+  css = cset.getComponentsByType('css'), message = '', score = 100, offenders = [];
+
+  // If we have more requests than the set limit & we have css files, decrease the score
+  if (comps.length < config.limit && css.length > 0) {
+  
+    for (i = 0, len = css.length; i < len; i++) {
+      offenders.push(css[i].url); 
+    }
+
+    message = 'The page have ' +  comps.length + ' requests and uses ' + css.length + ' css files. It is better to keep the css inline, when you have so few requests.';
+    score -= offenders.length * parseInt(config.points, 10);
+
+  }
+
+  return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+      }
+});
+
+YSLOW.registerRule({
+  id: 'nodnslookupswhenfewrequests',
+  name: 'Avoid DNS lookups when the page has few request',
+  info: 'If you have few prequest on a page, they should all be to the same domain to avoid DNS lookups, because the lookup will take extra time',
+  category: ['content'],
+  config: {points: 20, limit: 10,  types: ['css', 'image', 'cssimage', 'flash', 'favicon']},
+  url: 'http://sitespeed.io/rules/#nodnslookupswhenfewrequests',
+
+  lint: function (doc, cset, config) {
+
+  var domains, comps = cset.getComponentsByType(config.types),
+  score = 100, message = '', offenders = [];
+  syncJs = SITESPEEDHELP.getSynchronouslyJavascripts(cset.getComponentsByType('js'));
+
+  // Add the js files that are loaded sync
+  for (i = 0, len = syncJs.length; i < len; i++) {
+    comps.push(syncJs[i]);
+  }
+
+  domains = YSLOW.util.getUniqueDomains(comps);
+
+  // Only activate if the number of components are less than the limit 
+  // and we have more than one domain
+  if (comps.length < config.limit && domains.length > 1) {
+    for (i = 0, len = comps.length; i < len; i++) {
+      offenders.push(comps[i].url); 
+    }
+    message = 'Too many domains (' + domains.length + ') used for a page with only ' + comps.length + ' requests (async javascripts not included)';
+    score -= offenders.length * parseInt(config.points, 10);
+  }
+
+  return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+  }
+});
+
+
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-1.4',
-    name: 'Sitespeed.io rules v1.4',
+    id: 'sitespeed.io-1.5',
+    name: 'Sitespeed.io rules v1.5',
     rules: {
         ynumreq: {
 	         // We are a little harder than standard yslow
@@ -594,6 +682,8 @@ YSLOW.registerRuleset({
         totalrequests: {},
         expiresmod: {},
         spof: {},
+        nodnslookupswhenfewrequests:{},
+        inlinecsswhenfewrequest:{},
         toomuchjs: {}
 
     },
@@ -629,6 +719,8 @@ YSLOW.registerRuleset({
         expiresmod: 10,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
+        nodnslookupswhenfewrequests: 8,
+        inlinecsswhenfewrequest: 7,
         toomuchjs: 1
 
     }

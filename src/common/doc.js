@@ -105,7 +105,10 @@ YSLOW.doc.addRuleInfo('totalrequests','Reduce number of total requests','Avoid t
 YSLOW.doc.addRuleInfo('expiresmod','Have long expire headers for static components','By adding long HTTP expires headers to your static files, the files will be cached in the end users browser. This is the standard expires Yslow rule with the twist that you do not get penalized using Google Analythics or Gaug.es.');
 YSLOW.doc.addRuleInfo('spof','Frontend single point of failure','A page can be stopped to be loaded in the browser, if a single script or css could not be fetched (the white screen of death), and that is something you really want to avoid. Never load 3rd party components inside of HEAD!');
 
-YSLOW.doc.addRuleInfo('toomuchjs','Too much javascript compared to text content','The javascript you have, need to actually add functionality to your page, if you load too much javascript in the browser, the page will be slow, so make sure you have an ok ratio between javascript and content.');
+YSLOW.doc.addRuleInfo('toomuchjs','Too much javascript compared to text content','This is an exprimental rule: The javascript you have, need to actually add functionality to your page, if you load too much javascript in the browser, the page will be slow, so make sure you have an ok ratio between javascript and content.');
+
+YSLOW.doc.addRuleInfo('nodnslookupswhenfewrequests','Avoid DNS lookups when a page has few requests','If you have few prequest on a page, they should all be on the same domain to avoid DNS lookups, because the lookup will take extra time.');
+YSLOW.doc.addRuleInfo('inlinecsswhenfewrequest','Do not load css stylesheet files when the page has few request','When a page has few requests (or actually maybe always if you dont have a massive amount of css), it is better to inline the css, to make the page to start render as early as possible');
 
 //
 // Tools text
@@ -143,7 +146,7 @@ YSLOW.doc.splash.more_info = 'Learn more about YSlow and the Yahoo! Developer Ne
 //
 // Rule Settings
 //
-YSLOW.doc.rulesettings_desc = 'Choose which ruleset (YSlow V2, Classic V1, or Small Site/Blog) best fits your specific needs.  Or create a new set and click Save as... to save it.';
+YSLOW.doc.rulesettings_desc = 'Choose which ruleset (Sitespeed, YSlow V2, Classic V1, or Small Site/Blog) best fits your specific needs.  Or create a new set and click Save as... to save it.';
 
 //
 // Components table legend
