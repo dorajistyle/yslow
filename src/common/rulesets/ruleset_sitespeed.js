@@ -255,7 +255,7 @@ YSLOW.registerRule({
       'The following ' + YSLOW.util.plural('%num% css', offendercomponents.length) +
         ' are loaded from a different domain inside head, causing DNS lookups before page is rendered. Unique DNS in head that decreases the score:' + uniquedns.length + ".";
     // only punish dns lookups    
-    score -= uniquedns.length * parseInt(config.points, 10)
+    score -= uniquedns.length * parseInt(config.points, 10);
   
     return {
       score: score,
@@ -305,7 +305,7 @@ YSLOW.registerRule({
     var message = offender_comps.length === 0 ? '' :
       'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
         ' that are not loaded asynchronously in head, that will block the rendering.';
-    score -= offender_comps.length * parseInt(config.points, 10)
+    score -= offender_comps.length * parseInt(config.points, 10);
   
     return {
       score: score,
@@ -338,6 +338,97 @@ YSLOW.registerRule({
       score: score,
       message: message,
       components: comps
+    };
+  }
+});
+
+
+YSLOW.registerRule({
+  id: 'criticalpath',
+  name: 'Avoid slowing down the rendering critical path',
+  info: 'Every file loaded inside of head, will postpone the rendering of the page, try to avoid loading javascript synchronously, load files from the same domain as the main document, and inline css for really fast critical path.',
+  category: ['misc'],
+  config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 5, cssPoints: 5},
+  url: 'http://sitespeed.io/rules/#criticalpath',
+
+  lint: function (doc, cset, config) {
+
+    var scripts = doc.getElementsByTagName('script'),
+    jsComponents = cset.getComponentsByType('js'),
+    cssComponents = cset.getComponentsByType('css'),
+    links = doc.getElementsByTagName('link'),
+    score = 100, docDomain, js, offenders = [], componentOffenders = [], comp,
+    jsFail = 0, cssFail = 0, notDocumentDomains = 0, domains;
+
+    // the domain where the document is fetched from
+    // use this domain to avoid DNS lookups
+    docDomain = YSLOW.util.getHostname(cset.doc_comp.url);
+
+    // calculate the score for javascripts
+    // synchronous will hurt us most
+    // defer CAN hurt us and async will not 
+    // all inside of head of course
+    for (i = 0, len = scripts.length; i < len; i++) {
+      js = scripts[i];
+      if (js.parentNode.tagName === 'HEAD') {
+        if (js.src) {
+          if (js.async) 
+            continue;
+          else if (js.defer) {
+            offenders[js.src] = 1;
+            score -= config.deferJSPoints;
+            jsFail++;
+          }
+          else {
+            offenders[js.src] = 1;
+            score -= config.synchronouslyJSPoints;
+            jsFail++;
+          }
+        }
+      }
+    }
+
+    // then for CSS
+    for (i = 0, len = links.length; i < len; i++) {
+      comp = links[i];
+      src = comp.href || comp.getAttribute('href');
+      if (src && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
+               if (comp.parentNode.tagName === 'HEAD') {
+                 offenders[src] = 1;
+                 score -= config.cssPoints;
+                 cssFail++;
+               }
+
+            }
+        }
+
+    // match them
+    for (var i = 0; i < jsComponents.length; i++) {
+      if (offenders[jsComponents[i].url]) {
+        componentOffenders.push(jsComponents[i]);
+      }
+    }  
+
+      for (var i = 0; i < cssComponents.length; i++) {
+      if (offenders[cssComponents[i].url]) {
+        componentOffenders.push(cssComponents[i]);
+      }
+    }  
+
+    // hurt the ones that loads from another domain
+    domains = YSLOW.util.getUniqueDomains(componentOffenders, true);
+    for (var i = 0; i < domains.length; i++) {
+      if (domains[i] !== docDomain)
+        notDocumentDomains++;
+    }
+    score -= config.dnsLookupsPoints  * notDocumentDomains;
+
+    message = score === 100 ? '' : 'You have ' + jsFail + ' javascripts in the critical path and ' + cssFail + ' stylesheets'  + 'using ' + notDocumentDomains  + ' extra domains';
+
+    return {
+      score: score,
+      message: message,
+      components:  componentOffenders
     };
   }
 });
@@ -643,6 +734,7 @@ YSLOW.registerRuleset({
     id: 'sitespeed.io-1.5',
     name: 'Sitespeed.io rules v1.5',
     rules: {
+        criticalpath: {},
         ynumreq: {
 	         // We are a little harder than standard yslow
 	         // the number of scripts allowed before we start penalizing
@@ -688,6 +780,7 @@ YSLOW.registerRuleset({
 
     },
     weights: {
+        criticalpath: 20,
         ynumreq: 8,
         yemptysrc: 30,
         ycompress: 8,
