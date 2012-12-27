@@ -423,7 +423,7 @@ YSLOW.registerRule({
     }
     score -= config.dnsLookupsPoints  * notDocumentDomains;
 
-    message = score === 100 ? '' : 'You have ' + jsFail + ' javascripts in the critical path and ' + cssFail + ' stylesheets'  + 'using ' + notDocumentDomains  + ' extra domains';
+    message = score === 100 ? '' : 'You have ' + jsFail + ' javascripts in the critical path and ' + cssFail + ' stylesheets'  + ' using ' + notDocumentDomains  + ' extra domains';
 
     return {
       score: score,
@@ -780,7 +780,7 @@ YSLOW.registerRuleset({
 
     },
     weights: {
-        criticalpath: 20,
+        criticalpath: 15,
         ynumreq: 8,
         yemptysrc: 30,
         ycompress: 8,
