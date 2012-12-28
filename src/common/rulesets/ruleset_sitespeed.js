@@ -15,7 +15,13 @@ YSLOW3PO.is3p = function (url) {
     'code.jquery.com',
     'platform.linkedin.com',
     '.disqus.com',
-    'assets.pinterest.com'
+    'assets.pinterest.com',
+    'widgets.digg.com',
+    '.addthis.com',
+    'code.jquery.com',
+    'ad.doubleclick.net',
+    '.lognormal.com', 
+    'embed.spotify.com'    
   ];
   var hostname = YSLOW.util.getHostname(url);
   var re;
@@ -347,7 +353,7 @@ YSLOW.registerRule({
   id: 'criticalpath',
   name: 'Avoid slowing down the rendering critical path',
   info: 'Every file loaded inside of head, will postpone the rendering of the page, try to avoid loading javascript synchronously, load files from the same domain as the main document, and inline css for really fast critical path.',
-  category: ['misc'],
+  category: ['content'],
   config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 5, cssPoints: 5},
   url: 'http://sitespeed.io/rules/#criticalpath',
 
@@ -437,7 +443,7 @@ YSLOW.registerRule({
   id: 'totalrequests',
   name: 'Low number of total requests is good',
   info: 'The more number of requests, the slower the page',
-  category: ['misc'],
+  category: ['content'],
   config: {points: 5},
   url: 'http://sitespeed.io/rules/#totalrequests',
 
@@ -470,51 +476,10 @@ YSLOW.registerRule({
   }
 });
 
-// Exprimental rule
-YSLOW.registerRule({
-  id: 'toomuchjs',
-  name: 'Too much javascript compared to text content',
-  info: 'The javascript you have, need to actually add functionality to your page, if you load too much javascript in the browser, the page will be slow.',
-  category: ['js'],
-  config: {points: 5},
-  url: 'http://sitespeed.io/rules/#toomuchjs',
-
-  lint: function (doc, cset, config) {
-  
-  var jsComponents = cset.getComponentsByType('js'),
-   totalJsSize = 0, 
-   jspercentage,
-   score,
-   docSize = cset.getComponentsByType('doc')[0].size;
-
-    // Get the size of all js files
-    for (i = 0, len = jsComponents.length; i < len; i += 1) {
-        totalJsSize = totalJsSize + jsComponents[i].size
-        }
-
-    // convert to kb & 2 decimals and percentage    
-    jspercentage =  Math.round((totalJsSize / (totalJsSize  + docSize))*10000)/100;   
-
-    if (jspercentage < 40)
-      score = 100;
-    else if (jspercentage < 50)
-       score = 80;
-     else score = 50;
-
-    var message = score == 100 ? '' :  'The content of the page concist of ' + jspercentage + '% javascript, that is too much.';
-    return {
-      score: score,
-      message: message,
-      components: []
-    };
-  }
-});
-
-
 YSLOW.registerRule({
   id: 'spof',
   name: 'Frontend single point of failure',
-  info: 'A page should not have a single point of failure, meaning not load thingss in head that you are not responsible for',
+  info: 'A page should not have a single point of failure a.k.a load content from a provider that can get the page to stop working.',
   category: ['misc'],
   config: {points: 10},
   url: 'http://sitespeed.io/rules/#spof',
@@ -522,67 +487,81 @@ YSLOW.registerRule({
   lint: function (doc, cset, config) {
 
     var css = doc.getElementsByTagName('link'), 
-    csscomps = cset.getComponentsByType('css'),
-    comp, docdomaintld, src, offenders = {}, 
-    offender_comps = [],  
     scripts = doc.getElementsByTagName('script'), 
+    csscomps = cset.getComponentsByType('css'),
     jscomps = cset.getComponentsByType('js'),
-    // fontcomps = cset.getComponentsByType('font'),
+    docDomainTLD, src, url, matches, offenders = [], 
+    nrOfInlineFontFace = 0, nrOfFontFaceCssFiles = 0, nrOfJs = 0, nrOfCss = 0,
+    // RegEx pattern for retrieving all the font-face styles, borrowed from https://github.com/senthilp/spofcheck/blob/master/lib/rules.js
+    pattern = /@font-face[\s\n]*{([^{}]*)}/gim, 
+    urlPattern = /url\s*\(\s*['"]?([^'"]*)['"]?\s*\)/gim,
     score = 100;
   
-    docdomaintld = SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cset.doc_comp.url));
+    docDomainTld = SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cset.doc_comp.url));
 
-    // check for js & css loaded in head, from another domain (not subdomain)
-    // start with css
+    // Check for css loaded in head, from another domain (not subdomain)  
     for (i = 0, len = css.length; i < len; i++) {
       csscomp = css[i];
             src = csscomp.href || csscomp.getAttribute('href');
             if (src && (csscomp.rel === 'stylesheet' || csscomp.type === 'text/css')) {
                if (csscomp.parentNode.tagName === 'HEAD') {
-                offenders[src] = 1;
+                 if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(src))) {
+                offenders.push(src);
+                nrOfCss++;
+                }
                }
 
             }
         }
 
+    // Check for font-face in the external css files
     for (var i = 0; i < csscomps.length; i++) {
-      if (offenders[csscomps[i].url]) {
-        if (docdomaintld !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(csscomps[i].url))) {
-          offender_comps.push(csscomps[i]);
-        }
+
+      matches = csscomps[i].body.match(pattern);
+      if(!matches) continue;
+      else {
+        // we have a match, a fontface user :)
+        offenders.push(csscomps[i]);
+        nrOfFontFaceCssFiles++;
       }
     }
 
+    // Check for inline font-face 
+    matches = doc.documentElement.innerHTML.match(pattern);
+
+    if (matches) {
+    matches.forEach(function(match) {
+      while(url = urlPattern.exec(match)) {
+        offenders.push(url[1]);
+        nrOfInlineFontFace++;
+      }
+    });
+    }
+      
     // now the js
-  for (i = 0, len = scripts.length; i < len; i++) {
+    for (i = 0, len = scripts.length; i < len; i++) {
       jscomp = scripts[i];
       if (jscomp.parentNode.tagName === 'HEAD') {
         if (jscomp.src) {
           if (!jscomp.async && !jscomp.defer) {
-            offenders[jscomp.src] = 1;
+             if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(jscomp.src))) {
+            offenders.push(jscomp.src);
+            nrOfJs++;
+            }
           }
         }
       }
     }
 
-    for (var i = 0; i < jscomps.length; i++) {
-      if (offenders[jscomps[i].url]) {
-         if (docdomaintld !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(jscomps[i].url))) {
-          offender_comps.push(jscomps[i]);
-        }
-      }
-    }
-
-    var message = offender_comps.length === 0 ? '' :
-      'The following ' + YSLOW.util.plural('%num% assets', offender_comps.length) +
-        ' are loaded from a different domain inside head and could be a single point of failure. ';
-    score -= offender_comps.length * parseInt(config.points, 10);
-
+    var message = offenders.length === 0  ? '' :
+      'There are possible of ' + YSLOW.util.plural('%num% assets', offenders.length) +
+        ' that can cause a frontend single point of failure. Javascripts:'  + nrOfJs + ' CSS:' + nrOfCss + ' inlineFontFace:' + nrOfInlineFontFace + ' fontFace in CSS files:' + nrOfFontFaceCssFiles;
+    score -= offenders.length * parseInt(config.points, 10);
 
     return {
       score: score,
       message: message,
-      components: offender_comps
+      components: offenders
     };
   }
 });
@@ -735,6 +714,7 @@ YSLOW.registerRuleset({
     name: 'Sitespeed.io rules v1.5',
     rules: {
         criticalpath: {},
+        spof: {},
         ynumreq: {
 	         // We are a little harder than standard yslow
 	         // the number of scripts allowed before we start penalizing
@@ -773,14 +753,15 @@ YSLOW.registerRuleset({
         avoidfont: {},
         totalrequests: {},
         expiresmod: {},
-        spof: {},
         nodnslookupswhenfewrequests:{},
-        inlinecsswhenfewrequest:{},
-        toomuchjs: {}
+        inlinecsswhenfewrequest:{}
+        
 
     },
     weights: {
         criticalpath: 15,
+        // Low since we fetch all different domains, not only 3rd parties
+        spof: 5,
         ynumreq: 8,
         yemptysrc: 30,
         ycompress: 8,
@@ -810,11 +791,8 @@ YSLOW.registerRuleset({
         avoidfont: 1,
         totalrequests: 10,
         expiresmod: 10,
-        // Low since we fetch all different domains, not only 3rd parties
-        spof: 5,
         nodnslookupswhenfewrequests: 8,
-        inlinecsswhenfewrequest: 7,
-        toomuchjs: 1
+        inlinecsswhenfewrequest: 7
 
     }
 
