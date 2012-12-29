@@ -172,6 +172,24 @@ for (var i = 0; i < js.length; i++) {
 return syncJs;
 };
 
+// Inspired by dom monster http://mir.aculo.us/dom-monster/
+SITESPEEDHELP.getTextLength = function (element) {
+
+var avoidTextInScriptAndStyle = ("script style").split(' ');
+var textLength = 0;
+
+function getLength(element){
+  if(element.childNodes && element.childNodes.length>0)
+    for(var i=0;i<element.childNodes.length;i++)
+      getLength(element.childNodes[i]);
+    if(element.nodeType==3 && avoidTextInScriptAndStyle.indexOf(element.parentNode.tagName.toLowerCase())==-1)
+      textLength += element.nodeValue.length; 
+}
+
+getLength(element);
+return textLength; 
+};
+
 /* End */
 
 YSLOW.registerRule({
@@ -481,7 +499,7 @@ YSLOW.registerRule({
   name: 'Frontend single point of failure',
   info: 'A page should not have a single point of failure a.k.a load content from a provider that can get the page to stop working.',
   category: ['misc'],
-  config: {points: 10},
+  config: {jsPoints: 10, cssPoints: 8, fontFaceInCssPoints: 5, inlineFontFacePoints: 1},
   url: 'http://sitespeed.io/rules/#spof',
 
   lint: function (doc, cset, config) {
@@ -521,6 +539,7 @@ YSLOW.registerRule({
       if(!matches) continue;
       else {
         // we have a match, a fontface user :)
+        // TODO check domain of the font
         offenders.push(csscomps[i]);
         nrOfFontFaceCssFiles++;
       }
@@ -532,6 +551,7 @@ YSLOW.registerRule({
     if (matches) {
     matches.forEach(function(match) {
       while(url = urlPattern.exec(match)) {
+        // TODO check domain of the font
         offenders.push(url[1]);
         nrOfInlineFontFace++;
       }
@@ -555,8 +575,13 @@ YSLOW.registerRule({
 
     var message = offenders.length === 0  ? '' :
       'There are possible of ' + YSLOW.util.plural('%num% assets', offenders.length) +
-        ' that can cause a frontend single point of failure. Javascripts:'  + nrOfJs + ' CSS:' + nrOfCss + ' inlineFontFace:' + nrOfInlineFontFace + ' fontFace in CSS files:' + nrOfFontFaceCssFiles;
-    score -= offenders.length * parseInt(config.points, 10);
+        ' that can cause a frontend single point of failure. ';
+
+    message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF.';    
+    message += nrOfCss === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% css ',nrOfCss) + ' loaded from another domain that can cause SPOF.';
+    message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF.';
+    message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF.';
+    score -= nrOfJs * config.jsPoints + nrOfCss * config.cssPoints + nrOfInlineFontFace * config.inlineFontFacePoints + nrOfFontFaceCssFiles * config.fontFaceInCssPoints;
 
     return {
       score: score,
@@ -670,6 +695,38 @@ YSLOW.registerRule({
 });
 
 YSLOW.registerRule({
+  id: 'textcontent',
+  name: 'Have a reasonable percentage of textual content compared to the rest of the page',
+  info: 'Make sure you dont have too much styling etc that hides the text you want to deliver',
+  category: ['content'],
+  config: {decimals: 2},
+  url: 'http://sitespeed.io/rules/#textcontent',
+
+  lint: function (doc, cset, config) {
+  
+  var textLength = 0, score = 100, offenders = [], message, contentPercent;
+
+  textLength = SITESPEEDHELP.getTextLength(doc);
+  contentPercent = textLength/doc.body.innerHTML.length*100;
+  
+  if (contentPercent.toFixed(0)<50) {
+    score = contentPercent.toFixed(0)*2;
+  }
+
+  message = 'The amount of content percentage: ' + contentPercent.toFixed(config.decimals) + '%';
+  offenders.push(contentPercent.toFixed(config.decimals));
+
+  return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+      }
+});
+
+
+
+YSLOW.registerRule({
   id: 'nodnslookupswhenfewrequests',
   name: 'Avoid DNS lookups when the page has few request',
   info: 'If you have few prequest on a page, they should all be to the same domain to avoid DNS lookups, because the lookup will take extra time',
@@ -754,9 +811,8 @@ YSLOW.registerRuleset({
         totalrequests: {},
         expiresmod: {},
         nodnslookupswhenfewrequests:{},
-        inlinecsswhenfewrequest:{}
-        
-
+        inlinecsswhenfewrequest:{},
+        textcontent: {}
     },
     weights: {
         criticalpath: 15,
@@ -792,7 +848,8 @@ YSLOW.registerRuleset({
         totalrequests: 10,
         expiresmod: 10,
         nodnslookupswhenfewrequests: 8,
-        inlinecsswhenfewrequest: 7
+        inlinecsswhenfewrequest: 7,
+        textcontent: 1
 
     }
 

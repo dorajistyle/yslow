@@ -110,6 +110,8 @@ YSLOW.doc.addRuleInfo('toomuchjs','Too much javascript compared to text content'
 YSLOW.doc.addRuleInfo('nodnslookupswhenfewrequests','Avoid DNS lookups when a page has few requests','If you have few prequest on a page, they should all be on the same domain to avoid DNS lookups, because the lookup will take extra time.');
 YSLOW.doc.addRuleInfo('inlinecsswhenfewrequest','Do not load css stylesheet files when the page has few request','When a page has few requests (or actually maybe always if you dont have a massive amount of css), it is better to inline the css, to make the page to start render as early as possible');
 YSLOW.doc.addRuleInfo('criticalpath', 'Avoid slowing down the rendering critical path','Every file loaded inside of head, will postpone the rendering of the page, try to avoid loading javascript synchronously, load files from the same domain as the main document, and inline css for really fast critical path.');
+YSLOW.doc.addRuleInfo('textcontent','Have a reasonable percentage of textual content compared to the rest of the page','Make sure you dont have too much styling etc that hides the text you want to deliver');
+
 //
 // Tools text
 //
