@@ -527,7 +527,7 @@ YSLOW.registerRule({
 
 YSLOW.registerRule({
   id: 'inlinecsswhenfewrequest',
-  name: 'Do not load css stylesheet files when the page has few request',
+  name: 'Do not load css files when the page has few request',
   info: 'When a page has few requests, it is better to inline the css, to make the page to start render as early as possible',
   category: ['css'],
   config: {points: 20, limit: 15,  types: ['css', 'js', 'image', 'cssimage', 'flash', 'favicon']},
