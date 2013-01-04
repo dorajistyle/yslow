@@ -281,7 +281,13 @@ YSLOW.registerRule({
     for (i = 0, len = links.length; i < len; i++) {
       comp = links[i];
       src = comp.href || comp.getAttribute('href');
-      if (src && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
+
+      // Skip print stylesheets for now, since they "only" will make the onload sloooow
+      // maybe it's better to check for screen & all in the future?
+      if (comp.media === 'print') 
+        continue;
+
+      else if (src && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
                if (comp.parentNode.tagName === 'HEAD') {
                  offenders[src] = 1;
                  score -= config.cssPoints;
@@ -386,6 +392,12 @@ YSLOW.registerRule({
     for (i = 0, len = css.length; i < len; i++) {
       csscomp = css[i];
             src = csscomp.href || csscomp.getAttribute('href');
+
+            // Skip print stylesheets for now, since they "only" will make the onload sloooow
+            // maybe it's better to check for screen & all in the future?
+            if (csscomp.media === 'print') 
+              continue;
+
             if (src && (csscomp.rel === 'stylesheet' || csscomp.type === 'text/css')) {
                if (csscomp.parentNode.tagName === 'HEAD') {
                  if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(src))) {
