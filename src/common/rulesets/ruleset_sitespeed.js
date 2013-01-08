@@ -373,7 +373,7 @@ YSLOW.registerRule({
     scripts = doc.getElementsByTagName('script'), 
     csscomps = cset.getComponentsByType('css'),
     jscomps = cset.getComponentsByType('js'),
-    docDomainTLD, src, url, matches, offenders = [], 
+    docDomainTLD, src, url, matches, offenders = [], insideHeadOffenders = [], 
     nrOfInlineFontFace = 0, nrOfFontFaceCssFiles = 0, nrOfJs = 0, nrOfCss = 0,
     // RegEx pattern for retrieving all the font-face styles, borrowed from https://github.com/senthilp/spofcheck/blob/master/lib/rules.js
     pattern = /@font-face[\s\n]*{([^{}]*)}/gim, 
@@ -388,14 +388,21 @@ YSLOW.registerRule({
             src = csscomp.href || csscomp.getAttribute('href');
             if (src && (csscomp.rel === 'stylesheet' || csscomp.type === 'text/css')) {
                if (csscomp.parentNode.tagName === 'HEAD') {
-                 if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(src))) {
-                offenders.push(src);
-                nrOfCss++;
-                }
+               insideHeadOffenders[src] = 1;
                }
-
             }
         }
+
+	
+	for (var i = 0; i < csscomps.length; i++) {
+      if (insideHeadOffenders[csscomps[i].url]) {
+        if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(csscomps[i].url))) {
+          offenders.push(csscomps[i]);
+          nrOfCss++;
+        }
+      }
+    }
+
 
     // Check for font-face in the external css files
     for (var i = 0; i < csscomps.length; i++) {
@@ -422,21 +429,28 @@ YSLOW.registerRule({
       }
     });
     }
-      
+  
     // now the js
     for (i = 0, len = scripts.length; i < len; i++) {
       jscomp = scripts[i];
       if (jscomp.parentNode.tagName === 'HEAD') {
         if (jscomp.src) {
           if (!jscomp.async && !jscomp.defer) {
-             if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(jscomp.src))) {
-            offenders.push(jscomp.src);
-            nrOfJs++;
-            }
+            insideHeadOffenders[jscomp.src] = 1;
           }
         }
       }
     }
+
+    for (var i = 0; i < jscomps.length; i++) {
+      if (insideHeadOffenders[jscomps[i].url]) {
+          if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(jscomps[i].url))) {
+          offenders.push(jscomps[i]);
+           nrOfJs++;
+        }
+      }
+    }
+
 
     var message = offenders.length === 0  ? '' :
       'There are possible of ' + YSLOW.util.plural('%num% assets', offenders.length) +
