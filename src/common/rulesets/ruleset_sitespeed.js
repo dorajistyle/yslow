@@ -55,6 +55,28 @@ getLength(element);
 return textLength; 
 };
 
+SITESPEEDHELP.isSameDomainTLD = function (docDomainTLD, cssUrl, fontFaceUrl) {
+
+// first check the font-face url, is it absolute or relative
+if ((/^http/).test(fontFaceUrl)) {
+	// it is absolute ...
+	 if (docDomainTLD === SITESPEEDHELP.getTLD(YSLOW.util.getHostname(fontFaceUrl))) {
+	 return true;
+	 }
+	 else return false;
+}
+
+// it is relative, check if the css is for the same domain as doc 
+ else if (docDomainTLD === SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cssUrl))) {
+ return true;
+ }
+ 
+else return false;
+
+return false;
+};
+
+
 /* End */
 
 YSLOW.registerRule({
@@ -364,7 +386,7 @@ YSLOW.registerRule({
   name: 'Frontend single point of failure',
   info: 'A page should not have a single point of failure a.k.a load content from a provider that can get the page to stop working.',
   category: ['misc'],
-  config: {jsPoints: 10, cssPoints: 8, fontFaceInCssPoints: 5, inlineFontFacePoints: 1},
+  config: {jsPoints: 10, cssPoints: 8, fontFaceInCssPoints: 8, inlineFontFacePoints: 1},
   url: 'http://sitespeed.io/rules/#spof',
 
   lint: function (doc, cset, config) {
@@ -378,6 +400,7 @@ YSLOW.registerRule({
     // RegEx pattern for retrieving all the font-face styles, borrowed from https://github.com/senthilp/spofcheck/blob/master/lib/rules.js
     pattern = /@font-face[\s\n]*{([^{}]*)}/gim, 
     urlPattern = /url\s*\(\s*['"]?([^'"]*)['"]?\s*\)/gim,
+    fontFaceInfo = '',
     score = 100;
   
     docDomainTLD = SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cset.doc_comp.url));
@@ -392,7 +415,6 @@ YSLOW.registerRule({
                }
             }
         }
-
 	
 	for (var i = 0; i < csscomps.length; i++) {
       if (insideHeadOffenders[csscomps[i].url]) {
@@ -403,32 +425,43 @@ YSLOW.registerRule({
       }
     }
 
-
+	
     // Check for font-face in the external css files
     for (var i = 0; i < csscomps.length; i++) {
 
       matches = csscomps[i].body.match(pattern);
-      if(!matches) continue;
-      else {
-        // we have a match, a fontface user :)
-        // TODO check domain of the font
-        offenders.push(csscomps[i]);
-        nrOfFontFaceCssFiles++;
+      if(matches) {
+       matches.forEach(function(match) {
+       	while(url = urlPattern.exec(match)) {
+      		if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, csscomps[i].url, url[1])) 
+      		{
+        		// we have a match, a fontface user :)
+        	 	offenders.push(url[1]);
+        	  	nrOfFontFaceCssFiles++;
+        	  	fontFaceInfo += 'The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
+        	}
+        }
+        });
       }
     }
+  
 
     // Check for inline font-face 
+   
     matches = doc.documentElement.innerHTML.match(pattern);
 
     if (matches) {
     matches.forEach(function(match) {
       while(url = urlPattern.exec(match)) {
-        // TODO check domain of the font
-        offenders.push(url[1]);
-        nrOfInlineFontFace++;
+     	if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, cset.doc_comp.url, url[1])) {
+        	offenders.push(url[1]);
+        	nrOfInlineFontFace++;
+        	fontFaceInfo += 'The font file:' + url[1] + ' is loaded inline.';
+        }
       }
     });
     }
+  
   
     // now the js
     for (i = 0, len = scripts.length; i < len; i++) {
@@ -458,8 +491,8 @@ YSLOW.registerRule({
 
     message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF.';    
     message += nrOfCss === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% css ',nrOfCss) + ' loaded from another domain that can cause SPOF.';
-    message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF.';
-    message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF.';
+    message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF.' + fontFaceInfo;
+    message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF.' + fontFaceInfo;
     score -= nrOfJs * config.jsPoints + nrOfCss * config.cssPoints + nrOfInlineFontFace * config.inlineFontFacePoints + nrOfFontFaceCssFiles * config.fontFaceInCssPoints;
 
     return {
