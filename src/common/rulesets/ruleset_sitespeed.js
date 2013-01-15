@@ -782,8 +782,8 @@ YSLOW.registerRule({
 
 
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-1.5',
-    name: 'Sitespeed.io rules v1.5',
+    id: 'sitespeed.io-1.6',
+    name: 'Sitespeed.io rules v1.6',
     rules: {
         criticalpath: {},
         spof: {},
