@@ -727,7 +727,7 @@ YSLOW3PO.is3p = function (url) {
 
 
 YSLOW.registerRule({
-  id: '_3po_asyncjs',
+  id: 'thirdpartyasyncjs',
   name: 'Load 3rd party JS asynchronously',
   info: "Use the JavaScript snippets that load the JS files asynchronously " +
         "in order to speed up the user experience.",
@@ -776,7 +776,7 @@ YSLOW.registerRule({
 
 
 YSLOW.registerRule({
-  id: '_3po_jsonce',
+  id: 'thirdpartyjsonce',
   name: 'Load the 3rd party JS only once',
   info: 'Loading the 3rd party JS files more than once per page is not ' +
         'necessary and slows down the user experience',
@@ -864,8 +864,8 @@ YSLOW.registerRuleset({
         yimgnoscale: {},
         // skipping favicon for now, since it don't seems to work with phantomjs, always get size 0 and no cache header
         // yfavicon: {},
-        _3po_asyncjs: {},
-	      _3po_jsonce: {},
+        thirdpartyasyncjs: {},
+	      thirdpartyjsonce: {},
         cssprint: {},
         cssinheaddomain: {},
         syncjsinhead: {},
@@ -901,8 +901,8 @@ YSLOW.registerRuleset({
         ynofilter: 4,
         yimgnoscale: 3,
         // yfavicon: 2,
-        _3po_asyncjs: 10,
-		    _3po_jsonce: 10,
+        thirdpartyasyncjs: 10,
+		    thirdpartyjsonce: 10,
         cssprint: 3,
         cssinheaddomain: 8,
         syncjsinhead: 20,
