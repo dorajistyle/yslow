@@ -108,6 +108,9 @@ YSLOW.doc.addRuleInfo('nodnslookupswhenfewrequests','Avoid DNS lookups when a pa
 YSLOW.doc.addRuleInfo('inlinecsswhenfewrequest','Do not load css files when the page has few request','When a page has few requests (or actually maybe always if you dont have a massive amount of css), it is better to inline the css, to make the page to start render as early as possible.');
 YSLOW.doc.addRuleInfo('criticalpath', 'Avoid slowing down the critical rendering path','Every request fetched inside of HEAD, will postpone the rendering of the page! Do not load javascript synchronously inside of head, load files from the same domain as the main document (to avoid DNS lookups) and inline CSS for a really fast rendering path. The scoring system for this rule, will give you minus score for synchronously loaded javascript inside of head, css files requested inside of head and minus score for every DNS lookup inside of head.');
 YSLOW.doc.addRuleInfo('textcontent','Have a reasonable percentage of textual content compared to the rest of the page','Make sure the amount of HTML elements are too many compared to text content.');
+YSLOW.doc.addRuleInfo('noduplicates', 'Remove duplicate JavaScript and CSS', 'Duplicate JavaScript and CSS files hurt performance by creating unnecessary HTTP requests (IE only) and wasted JavaScript execution (IE and Firefox).  In IE, if an external script is included twice and is not cacheable, it generates two HTTP requests during page loading.  Even if the script is cacheable, extra HTTP requests occur when the user reloads the page.  In both IE and Firefox, duplicate JavaScript scripts cause wasted time evaluating the same scripts more than once.  This redundant script execution happens regardless of whether the script is cacheable.');
+
+
 
 //
 // Tools text

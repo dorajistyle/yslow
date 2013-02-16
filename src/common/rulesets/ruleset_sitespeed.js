@@ -825,6 +825,69 @@ YSLOW.registerRule({
   }
 });
 
+// Rewrite of the Yslow rule that don't work for PhantomJS at least
+YSLOW.registerRule({
+  id: 'noduplicates',
+  name: 'Remove duplicate JS and CSS',
+  info: 'It is bad practice include the same js or css twice',
+  category: ['js','css'],
+  config: {},
+  url: 'http://developer.yahoo.com/performance/rules.html#js_dupes',
+  
+
+  lint: function (doc, cset, config) {
+    var i, url, score, len, comp,
+        hash = {},
+        offenders = [],
+        comps = cset.getComponentsByType(['js','css']),
+        scripts = doc.getElementsByTagName('script'),
+        css = doc.getElementsByTagName('link');
+
+    // first the js
+    for (i = 0, len = scripts.length; i < len; i += 1) {
+      url = scripts[i].src;
+      if (typeof hash[url] === 'undefined') {
+        hash[url] = 1;
+      } else {
+        hash[url] += 1;
+      }
+    }
+
+    // then the css
+    for (i = 0, len = css.length; i < len; i += 1) {
+      comp = css[i];
+      url = comp.href || comp.getAttribute('href');
+      if (url && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
+        if (typeof hash[url] === 'undefined') {
+          hash[url] = 1;
+        } else {
+          hash[url] += 1;
+        }
+      }
+    }
+
+
+    // match offenders to YSLOW components
+    var offenders = [];
+    for (var i = 0; i < comps.length; i++) {
+      if (hash[comps[i].url] && hash[comps[i].url] > 1) {
+        offenders.push(comps[i]);
+      }
+    }
+
+    score = 100 - offenders.length * 11;
+
+    return {
+      score: score,
+      message: (offenders.length > 0) ? YSLOW.util.plural(
+          'There %are% %num% js/css file%s% included more than once on the page',
+          offenders.length
+      ) : '',
+      components: offenders
+    };
+  }
+});
+
 /* End */
 
 
@@ -852,7 +915,7 @@ YSLOW.registerRuleset({
         ydns: {},
         yminify: {},
         yredirects: {},
-        ydupes: {},
+        noduplicates: {},
         yetags: {},
         yxhr: {},
         yxhrmethod: {},
@@ -890,7 +953,7 @@ YSLOW.registerRuleset({
         ydns: 3,
         yminify: 4,
         yredirects: 4,
-        ydupes: 4,
+        noduplicates: 4,
         yetags: 2,
         yxhr: 4,
         yxhrmethod: 3,
