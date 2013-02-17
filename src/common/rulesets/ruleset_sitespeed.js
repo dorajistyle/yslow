@@ -517,26 +517,26 @@ YSLOW.registerRule({
 
 
 /**
-Modified version of yexpires, skip standard analythics scripts that you couldn't fix yourself (not 100% but ...)
+Modified version of yexpires, skip standard analythics scripts that you couldn't fix yourself (not 100% but ...) and will
+only give bad score for assets with 0 expires.
 */
 
 
 YSLOW.registerRule({
     id: 'expiresmod',
     name: 'Check for expires headers',
-    info: 'All static components of a page should have a far future expire headers. However, analythics scripts will not give you bad points.',
+    info: 'All static components of a page should have a future expire headers.',
     url: 'http://sitespeed.io/rules/#expires',
     category: ['server'],
 
     config: {
         // how many points to take for each component without Expires header
         points: 11,
-        // 2 days = 2 * 24 * 60 * 60 seconds, how far is far enough
-        howfar: 172800,
+        // If you at least have some kind of expiration, that is ok for now
+        howfar: 0,
         // component types to be inspected for expires headers
         // Skipping favicon right now because of a bug somewhere that never even fetch it
-        types: ['css', 'js', 'image', 'cssimage', 'flash'], // , 'favicon'],
-        skip: ['https://secure.gaug.es/track.js','https://ssl.google-analytics.com/ga.js','http://www.google-analytics.com/ga.js']
+        types: ['css', 'js', 'image', 'cssimage', 'flash'] // , 'favicon'],
     },
 
     lint: function (doc, cset, config) {
@@ -544,7 +544,6 @@ YSLOW.registerRule({
             // far-ness in milliseconds
             far = parseInt(config.howfar, 10) * 1000,
             offenders = [],
-            skipped = [],
             comps = cset.getComponentsByType(config.types);
 
         for (i = 0, len = comps.length; i < len; i += 1) {
@@ -556,12 +555,6 @@ YSLOW.registerRule({
                 if (expiration.getTime() > ts + far) {
                     continue;
                 }
-                  // if in the ok list, just skip it
-                 else if (config.skip.indexOf(comps[i].url) > 1 ) {
-                 skipped.push(comps[i].url);
-                 continue;
-                }
-
             }
 
               offenders.push(comps[i]);
@@ -572,9 +565,7 @@ YSLOW.registerRule({
         message = (offenders.length > 0) ? YSLOW.util.plural(
                 'There %are% %num% static component%s%',
                 offenders.length
-            ) + ' without a far-future expiration date.' : '';
-
-         message += (skipped.length > 0) ? YSLOW.util.plural(' There %are% %num% static component%s% that are skipped from the score calculation', skipped.length) + ":" + skipped : '';
+            ) + ' without a future expiration date.' : '';
 
         return {
             score: score,
