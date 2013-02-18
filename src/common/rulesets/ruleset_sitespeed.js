@@ -532,8 +532,6 @@ YSLOW.registerRule({
     config: {
         // how many points to take for each component without Expires header
         points: 11,
-        // If you at least have some kind of expiration, that is ok for now
-        howfar: 0,
         // component types to be inspected for expires headers
         // Skipping favicon right now because of a bug somewhere that never even fetch it
         types: ['css', 'js', 'image', 'cssimage', 'flash'] // , 'favicon'],
@@ -541,8 +539,6 @@ YSLOW.registerRule({
 
     lint: function (doc, cset, config) {
         var ts, i, expiration, score, len, message,
-            // far-ness in milliseconds
-            far = parseInt(config.howfar, 10) * 1000,
             offenders = [],
             comps = cset.getComponentsByType(config.types);
 
@@ -550,9 +546,16 @@ YSLOW.registerRule({
             expiration = comps[i].expires;
             if (typeof expiration === 'object' &&
                     typeof expiration.getTime === 'function') {
-                // looks like a Date object
-                ts = new Date().getTime();
-                if (expiration.getTime() > ts + far) {
+                
+                // check if the server has set the date, if so 
+                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18 
+                if (typeof comps[i].headers.date === 'undefined') {
+                	ts = new Date().getTime();                	
+                }
+                else
+                 ts = new Date(comps[i].headers.date).getTime();
+                
+                if (expiration.getTime() > ts) {
                     continue;
                 }
             }
