@@ -768,6 +768,117 @@ YSLOW.registerRule({
 });
 
 
+
+
+
+YSLOW.registerRule({
+    id: 'cssnumreq',
+    name: 'Make fewer HTTP requests for CSS files',
+    info: 'The more number of CSS requests, the slower the page will be. Combine your css files into one.',
+    category: ['css'],
+    config: {max_css: 1, points_css: 4},
+    url: 'http://sitespeed.io/rules/#cssnumreq',
+
+    lint: function (doc, cset, config) {
+          var css = cset.getComponentsByType('css'),
+            score = 100, offenders = [],
+            message = '';
+
+        if (css.length > config.max_css) {
+            score -= (css.length - config.max_css) * config.points_css;
+            message = 'This page has ' + YSLOW.util.plural('%num% external stylesheet%s%', (css.length  - config.max_css)) + '. Try combining them into one.';
+
+            for (var i = 0; i < css.length; i++) {
+              offenders.push(css[i].url);
+            }              
+        }
+        
+        return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+    }
+});
+
+
+YSLOW.registerRule({
+    id: 'cssimagesnumreq',
+    name: 'Make fewer HTTP requests for CSS image files',
+    info: 'The more number of CSS image requests, the slower the page. Combine your images into one CSS sprite.',
+    url: 'http://sitespeed.io/rules/#cssimagsenumreq',
+    category: ['css'],
+    config: {max_cssimages: 1, points_cssimages: 3},
+
+    lint: function (doc, cset, config) {
+            var cssimages = cset.getComponentsByType('cssimage'),
+            score = 100, offenders = [], 
+            message;
+
+        if (cssimages.length > config.max_cssimages) {
+            score -= (cssimages.length  -config.max_cssimages) * config.points_cssimages;
+            message = 'This page has ' + YSLOW.util.plural('%num% external css image%s%', (cssimages.length - config.max_cssimages)) + '. Try combining them into one.';
+            
+            for (var i = 0; i < cssimages.length; i++) {
+              offenders.push(cssimages[i].url);
+            }    
+        }
+        return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+    }
+});
+
+YSLOW.registerRule({
+  id: 'jsnumreq',
+  name: 'Make fewer synchronously HTTP requests for Javascript files',
+  info: 'Combine the Javascrips into one.',
+  category: ['js'],
+  config: { max_js: 1, points_js: 4},
+  url: 'http://sitespeed.io/rules/#jsnumreq',
+
+  lint: function (doc, cset, config) {
+    var scripts = doc.getElementsByTagName('script'), 
+    comps = cset.getComponentsByType('js'),
+    comp, offenders = {}, 
+    offender_comps = [], message, 
+    score = 100;
+  
+    // fetch all js that aren't async
+    for (i = 0, len = scripts.length; i < len; i++) {
+      comp = scripts[i];
+        if (comp.src) {
+          if (!comp.async && !comp.defer) {
+            offenders[comp.src] = 1;
+          }
+      }
+    }
+
+    for (var i = 0; i < comps.length; i++) {
+      if (offenders[comps[i].url]) {
+        offender_comps.push(comps[i]);
+      }
+    }
+
+
+    if (offender_comps.length > config.max_js) { 
+    message = 'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
+        ' loaded synchronously that could be combined into one.';
+    score -= (offender_comps.length - config.max_js) * parseInt(config.points_js, 10);
+    }
+  
+    return {
+      score: score,
+      message: message,
+      components: offender_comps
+    };
+  }
+});
+
+
+
 // Rewrite of the Yslow rule that don't work for PhantomJS at least
 YSLOW.registerRule({
   id: 'noduplicates',
@@ -840,15 +951,9 @@ YSLOW.registerRuleset({
     rules: {
         criticalpath: {},
         spof: {},
-        ynumreq: {
-	         // We are a little harder than standard yslow
-	         // the number of scripts allowed before we start penalizing
-	         max_js: 2,
-	         // number of external stylesheets allowed before we start penalizing
-	         max_css: 2,
-	         // number of background images allowed before we start penalizing
-	         max_cssimages: 2
-        },
+        cssnumreq: {},
+        cssimagesnumreq: {},
+        jsnumreq: {},
         yemptysrc: {},
         ycompress: {},
         ycsstop: {},
@@ -885,7 +990,9 @@ YSLOW.registerRuleset({
         criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
-        ynumreq: 8,
+        cssnumreq: 8,
+        cssimagesnumreq: 8,
+        jsnumreq: 8,
         yemptysrc: 30,
         ycompress: 8,
         ycsstop: 4,
