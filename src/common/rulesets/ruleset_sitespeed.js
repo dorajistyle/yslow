@@ -768,57 +768,6 @@ YSLOW.registerRule({
 });
 
 
-
-YSLOW.registerRule({
-  id: 'thirdpartyjsonce',
-  name: 'Load the 3rd party JS only once',
-  info: 'Loading the 3rd party JS files more than once per page is not ' +
-        'necessary and slows down the user experience',
-  category: ['js'],
-  config: {},
-  url: 'http://www.phpied.com/3PO#once',
-  
-
-  lint: function (doc, cset, config) {
-    var i, url, score, len,
-        hash = {},
-        offenders = [],
-        comps = cset.getComponentsByType('js'),
-        scripts = doc.getElementsByTagName('script');
-
-    for (i = 0, len = scripts.length; i < len; i += 1) {
-      url = scripts[i].src;
-      if (!url || !YSLOW3PO.is3p(url) || scripts[i].async || scripts[i].defer) {
-        continue;
-      }
-      if (typeof hash[url] === 'undefined') {
-        hash[url] = 1;
-      } else {
-        hash[url] += 1;
-      }
-    }
-
-    // match offenders to YSLOW components
-    var offenders = [];
-    for (var i = 0; i < comps.length; i++) {
-      if (hash[comps[i].url] && hash[comps[i].url] > 1) {
-        offenders.push(comps[i]);
-      }
-    }
-
-    score = 100 - offenders.length * 11;
-
-    return {
-      score: score,
-      message: (offenders.length > 0) ? YSLOW.util.plural(
-          'There %are% %num% 3rd party JS file%s% included more than once on the page',
-          offenders.length
-      ) : '',
-      components: offenders
-    };
-  }
-});
-
 // Rewrite of the Yslow rule that don't work for PhantomJS at least
 YSLOW.registerRule({
   id: 'noduplicates',
@@ -922,7 +871,6 @@ YSLOW.registerRuleset({
         // skipping favicon for now, since it don't seems to work with phantomjs, always get size 0 and no cache header
         // yfavicon: {},
         thirdpartyasyncjs: {},
-	      thirdpartyjsonce: {},
         cssprint: {},
         cssinheaddomain: {},
         syncjsinhead: {},
@@ -959,7 +907,6 @@ YSLOW.registerRuleset({
         yimgnoscale: 3,
         // yfavicon: 2,
         thirdpartyasyncjs: 10,
-		    thirdpartyjsonce: 10,
         cssprint: 3,
         cssinheaddomain: 8,
         syncjsinhead: 20,
