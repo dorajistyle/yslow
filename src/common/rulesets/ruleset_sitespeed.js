@@ -813,7 +813,7 @@ YSLOW.registerRule({
     lint: function (doc, cset, config) {
             var cssimages = cset.getComponentsByType('cssimage'),
             score = 100, offenders = [], 
-            message;
+            message = '';
 
         if (cssimages.length > config.max_cssimages) {
             score -= (cssimages.length  -config.max_cssimages) * config.points_cssimages;
@@ -831,6 +831,7 @@ YSLOW.registerRule({
     }
 });
 
+
 YSLOW.registerRule({
   id: 'jsnumreq',
   name: 'Make fewer synchronously HTTP requests for Javascript files',
@@ -843,7 +844,7 @@ YSLOW.registerRule({
     var scripts = doc.getElementsByTagName('script'), 
     comps = cset.getComponentsByType('js'),
     comp, offenders = {}, 
-    offender_comps = [], message, 
+    offender_comps = [], message = '', 
     score = 100;
   
     // fetch all js that aren't async
