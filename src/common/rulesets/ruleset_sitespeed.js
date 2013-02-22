@@ -578,6 +578,67 @@ YSLOW.registerRule({
     }
 });
 
+
+YSLOW.registerRule({
+    id: 'longexpirehead',
+    name: 'Check for expires headers that are longer than 1 year',
+    info: 'All static components of a page should have at least 1 year expire header',
+    url: 'http://sitespeed.io/rules/#longexpires',
+    category: ['server'],
+
+    config: {
+        // how many points to take for each component without Expires header
+        points: 5,
+         // Skipping favicon right now because of a bug somewhere that never even fetch it
+        types: ['css', 'js', 'image', 'cssimage', 'flash'] // , 'favicon'],
+    },
+
+    lint: function (doc, cset, config) {
+        var ts, i, expiration, score, len, message,
+            offenders = [],
+            far = 31535000 * 1000, 
+            comps = cset.getComponentsByType(config.types);
+
+        for (i = 0, len = comps.length; i < len; i += 1) {
+            expiration = comps[i].expires;
+            if (typeof expiration === 'object' &&
+                    typeof expiration.getTime === 'function') {
+                
+                // check if the server has set the date, if so 
+                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18 
+                if (typeof comps[i].headers.date === 'undefined') {
+                	ts = new Date().getTime();                	
+                }
+                else
+                 ts = new Date(comps[i].headers.date).getTime();
+              
+                if (expiration.getTime() > ts + far) {
+                    continue;
+                }
+            
+            }
+
+              offenders.push(comps[i]);
+        }
+
+        score = 100 - offenders.length * parseInt(config.points, 10);
+       
+        message = (offenders.length > 0) ? YSLOW.util.plural(
+                'There %are% %num% static component%s%',
+                offenders.length
+            ) + ' without a expire header higher than 1 year' : '';
+
+        return {
+            score: score,
+            message: message,
+            components: offenders
+        };
+    }
+});
+
+
+
+
 YSLOW.registerRule({
   id: 'inlinecsswhenfewrequest',
   name: 'Do not load css files when the page has few request',
@@ -983,6 +1044,7 @@ YSLOW.registerRuleset({
         avoidfont: {},
         totalrequests: {},
         expiresmod: {},
+        longexpirehead: {},
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
         textcontent: {}
@@ -1021,6 +1083,7 @@ YSLOW.registerRuleset({
         avoidfont: 1,
         totalrequests: 10,
         expiresmod: 10,
+        longexpirehead: 5,
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
         textcontent: 1
