@@ -581,8 +581,8 @@ YSLOW.registerRule({
 
 YSLOW.registerRule({
     id: 'longexpirehead',
-    name: 'Check for expires headers that are longer than 1 year',
-    info: 'All static components of a page should have at least 1 year expire header',
+    name: 'Have expires headers equals or longer than one year',
+    info: 'All static components of a page should have at least one year expire header',
     url: 'http://sitespeed.io/rules/#longexpires',
     category: ['server'],
 
@@ -626,7 +626,7 @@ YSLOW.registerRule({
         message = (offenders.length > 0) ? YSLOW.util.plural(
                 'There %are% %num% static component%s%',
                 offenders.length
-            ) + ' without a expire header higher than 1 year' : '';
+            ) + ' without a expire header equal or longer than one year' : '';
 
         return {
             score: score,
