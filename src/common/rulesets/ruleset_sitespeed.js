@@ -578,11 +578,11 @@ YSLOW.registerRule({
     }
 });
 
-
+// skip standard analythics scripts that you couldn't fix yourself (not 100% but ...)
 YSLOW.registerRule({
     id: 'longexpirehead',
     name: 'Have expires headers equals or longer than one year',
-    info: 'All static components of a page should have at least one year expire header',
+    info: 'All static components of a page should have at least one year expire header. However, analythics scripts will not give you bad points.',
     url: 'http://sitespeed.io/rules/#longexpires',
     category: ['server'],
 
@@ -590,12 +590,14 @@ YSLOW.registerRule({
         // how many points to take for each component without Expires header
         points: 5,
          // Skipping favicon right now because of a bug somewhere that never even fetch it
-        types: ['css', 'js', 'image', 'cssimage', 'flash'] // , 'favicon'],
+        types: ['css', 'js', 'image', 'cssimage', 'flash'], // , 'favicon'],
+        skip: ['https://secure.gaug.es/track.js','https://ssl.google-analytics.com/ga.js','http://www.google-analytics.com/ga.js']
     },
 
     lint: function (doc, cset, config) {
         var ts, i, expiration, score, len, message,
             offenders = [],
+            skipped = [],
             far = 31535000 * 1000, 
             comps = cset.getComponentsByType(config.types);
 
@@ -615,6 +617,12 @@ YSLOW.registerRule({
                 if (expiration.getTime() > ts + far) {
                     continue;
                 }
+
+                 // if in the ok list, just skip it
+                 else if (config.skip.indexOf(comps[i].url) > 1 ) {
+                 skipped.push(comps[i].url);
+                 continue;
+                }
             
             }
 
@@ -627,6 +635,8 @@ YSLOW.registerRule({
                 'There %are% %num% static component%s%',
                 offenders.length
             ) + ' without a expire header equal or longer than one year' : '';
+
+         message += (skipped.length > 0) ? YSLOW.util.plural(' There %are% %num% static component%s% that are skipped from the score calculation', skipped.length) + ":" + skipped : '';
 
         return {
             score: score,
@@ -1004,6 +1014,43 @@ YSLOW.registerRule({
   }
 });
 
+// the same ruke as ymindom except that it reports the nr of doms 
+YSLOW.registerRule({
+    id: 'mindom',
+    name: 'Reduce the number of DOM elements',
+    info: 'The number of dom elements are in correlation to if the page is fast or not',
+    url: 'http://developer.yahoo.com/performance/rules.html#min_dom',
+    category: ['content'],
+
+    config: {
+        // the range
+        range: 250,
+        // points to take out for each range of DOM that's more than max.
+        points: 10,
+        // number of DOM elements are considered too many if exceeds maxdom.
+        maxdom: 900
+    },
+
+    lint: function (doc, cset, config) {
+        var numdom = cset.domElementsCount,
+            score = 100;
+
+        if (numdom > config.maxdom) {
+            score = 99 - Math.ceil((numdom - parseInt(config.maxdom, 10)) /
+                parseInt(config.range, 10)) * parseInt(config.points, 10);
+        }
+
+        return {
+            score: score,
+            message: (numdom > config.maxdom) ? YSLOW.util.plural(
+                'There %are% %num% DOM element%s% on the page',
+                numdom
+            ) : '',
+            components: [''+numdom]
+        };
+    }
+});
+
 /* End */
 
 
@@ -1029,7 +1076,7 @@ YSLOW.registerRuleset({
         yetags: {},
         yxhr: {},
         yxhrmethod: {},
-        ymindom: {},
+        mindom: {},
         yno404: {},
         ymincookie: {},
         ycookiefree: {},
@@ -1069,7 +1116,7 @@ YSLOW.registerRuleset({
         yetags: 2,
         yxhr: 4,
         yxhrmethod: 3,
-        ymindom: 3,
+        mindom: 3,
         yno404: 4,
         ymincookie: 3,
         ycookiefree: 3,
