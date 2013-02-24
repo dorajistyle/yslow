@@ -444,14 +444,14 @@ YSLOW.registerRule({
       matches = csscomps[i].body.match(pattern);
       if(matches) {
        matches.forEach(function(match) {
-       	while(url = urlPattern.exec(match)) {
-      		if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, csscomps[i].url, url[1])) 
-      		{
-        		// we have a match, a fontface user :)
-        	 	offenders.push(url[1]);
-        	  	nrOfFontFaceCssFiles++;
-        	  	fontFaceInfo += 'The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
-        	}
+	while(url = urlPattern.exec(match)) {
+		if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, csscomps[i].url, url[1])) 
+		{
+		// we have a match, a fontface user :)
+		offenders.push(url[1]);
+		nrOfFontFaceCssFiles++;
+		fontFaceInfo += ' The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
+	}
         }
         });
       }
@@ -465,10 +465,11 @@ YSLOW.registerRule({
     if (matches) {
     matches.forEach(function(match) {
       while(url = urlPattern.exec(match)) {
-     	if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, cset.doc_comp.url, url[1])) {
-        	offenders.push(url[1]);
-        	nrOfInlineFontFace++;
-        	fontFaceInfo += 'The font file:' + url[1] + ' is loaded inline.';
+	     if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, cset.doc_comp.url, url[1])) {
+	       offenders.push(url[1]);
+	       nrOfInlineFontFace++;
+	       fontFaceInfo += ' The font file:' + url[1] + ' is loaded inline.';
+
         }
       }
     });
@@ -1058,9 +1059,9 @@ YSLOW.registerRuleset({
     id: 'sitespeed.io-1.7',
     name: 'Sitespeed.io rules v1.7',
     rules: {
-        criticalpath: {},
-        spof: {},
-        cssnumreq: {},
+        //criticalpath: {},
+        spof: {}
+        /*cssnumreq: {},
         cssimagesnumreq: {},
         jsnumreq: {},
         yemptysrc: {},
@@ -1094,13 +1095,13 @@ YSLOW.registerRuleset({
         longexpirehead: {},
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
-        textcontent: {}
+        textcontent: {}*/
     },
     weights: {
-        criticalpath: 15,
+        // criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
-        spof: 5,
-        cssnumreq: 8,
+        spof: 5
+        /*cssnumreq: 8,
         cssimagesnumreq: 8,
         jsnumreq: 8,
         yemptysrc: 30,
@@ -1133,7 +1134,7 @@ YSLOW.registerRuleset({
         longexpirehead: 5,
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
-        textcontent: 1
+        textcontent: 1*/
 
     }
 
