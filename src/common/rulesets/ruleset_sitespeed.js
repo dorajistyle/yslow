@@ -1059,7 +1059,7 @@ YSLOW.registerRuleset({
     id: 'sitespeed.io-1.7',
     name: 'Sitespeed.io rules v1.7',
     rules: {
-        //criticalpath: {},
+        criticalpath: {},
         spof: {},
         cssnumreq: {},
         cssimagesnumreq: {},
@@ -1098,7 +1098,7 @@ YSLOW.registerRuleset({
         textcontent: {}
     },
     weights: {
-        // criticalpath: 15,
+         criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
         cssnumreq: 8,
