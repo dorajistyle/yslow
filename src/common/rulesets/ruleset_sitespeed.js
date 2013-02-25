@@ -502,10 +502,10 @@ YSLOW.registerRule({
       'There are possible of ' + YSLOW.util.plural('%num% assets', offenders.length) +
         ' that can cause a frontend single point of failure. ';
 
-    message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF.';    
-    message += nrOfCss === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% css ',nrOfCss) + ' loaded from another domain that can cause SPOF.';
-    message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF.' + fontFaceInfo;
-    message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF.' + fontFaceInfo;
+    message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF. ';    
+    message += nrOfCss === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% css ',nrOfCss) + ' loaded from another domain that can cause SPOF. ';
+    message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF. ' + fontFaceInfo;
+    message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF. ' + fontFaceInfo;
     score -= nrOfJs * config.jsPoints + nrOfCss * config.cssPoints + nrOfInlineFontFace * config.inlineFontFacePoints + nrOfFontFaceCssFiles * config.fontFaceInCssPoints;
 
     return {
@@ -1061,7 +1061,7 @@ YSLOW.registerRuleset({
     rules: {
         //criticalpath: {},
         spof: {}
-        /*cssnumreq: {},
+        cssnumreq: {},
         cssimagesnumreq: {},
         jsnumreq: {},
         yemptysrc: {},
@@ -1095,13 +1095,13 @@ YSLOW.registerRuleset({
         longexpirehead: {},
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
-        textcontent: {}*/
+        textcontent: {}
     },
     weights: {
         // criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5
-        /*cssnumreq: 8,
+        cssnumreq: 8,
         cssimagesnumreq: 8,
         jsnumreq: 8,
         yemptysrc: 30,
@@ -1134,7 +1134,7 @@ YSLOW.registerRuleset({
         longexpirehead: 5,
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
-        textcontent: 1*/
+        textcontent: 1
 
     }
 
