@@ -55,6 +55,26 @@ getLength(element);
 return textLength; 
 };
 
+
+// Borrowed from dom monster http://mir.aculo.us/dom-monster/
+ function digitCompare(user, edge) {
+    return (~~user || 0) >= (edge || 0);
+  }
+
+SITESPEEDHELP.versionCompare = function(userVersion, edgeVersion) {
+    if(userVersion === undefined) return true;
+
+    userVersion = userVersion.split('.');
+
+    var major = digitCompare(userVersion[0], edgeVersion[0]),
+        minor = digitCompare(userVersion[1], edgeVersion[1]),
+        build = digitCompare(userVersion[2], edgeVersion[2]);
+
+    return (!major || major && !minor || major && minor && !build);
+  };
+
+
+
 SITESPEEDHELP.isSameDomainTLD = function (docDomainTLD, cssUrl, fontFaceUrl) {
 
 // first check the font-face url, is it absolute or relative
@@ -1015,7 +1035,7 @@ YSLOW.registerRule({
   }
 });
 
-// the same ruke as ymindom except that it reports the nr of doms 
+// the same rule as ymindom except that it reports the nr of doms 
 YSLOW.registerRule({
     id: 'mindom',
     name: 'Reduce the number of DOM elements',
@@ -1051,6 +1071,41 @@ YSLOW.registerRule({
         };
     }
 });
+
+YSLOW.registerRule({
+    id: 'thirdpartyversions',
+    name: 'Always use latest versions of third party javascripts',
+    info: 'Unisng the latest versions, will make sure you have the fastest and hopefully leanest javascripts.',
+    url: 'http://sitespeed.io/rules/#thirdpartyversions',
+    category: ['js'],
+    config: { 
+    	// points to take out for each js that is old
+        points: 10
+        },
+
+    lint: function (doc, cset, config) {
+        var message = "",
+        score, offenders = 0;
+
+	if(typeof jQuery == 'function'){
+		if(SITESPEEDHELP.versionCompare(jQuery.fn.jquery, [1, 9, 1])) {
+        	message = "You are using an old version of JQuery: "+ jQuery.fn.jquery + " Newer version is faster & better. Upgrade to the newest version from http://jquery.com/" ;
+      		offenders += 1; 	
+      }
+	}
+
+	score = 100 - offenders * parseInt(config.points, 10);
+
+   	return {
+    	score: score,
+        message: message,
+        components: []
+        };
+    }
+});
+
+
+
 
 /* End */
 
@@ -1095,10 +1150,12 @@ YSLOW.registerRuleset({
         longexpirehead: {},
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
-        textcontent: {}
+        textcontent: {},
+        thirdpartyversions: {}
     },
     weights: {
-         criticalpath: 15,
+    	
+        criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
         cssnumreq: 8,
@@ -1134,8 +1191,8 @@ YSLOW.registerRuleset({
         longexpirehead: 5,
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
-        textcontent: 1
-
+        textcontent: 1,
+        thirdpartyversions:5
     }
 
 });

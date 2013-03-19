@@ -113,6 +113,8 @@ YSLOW.doc.addRuleInfo('cssimagesnumreq','Make fewer HTTP requests for CSS image 
 YSLOW.doc.addRuleInfo('jsnumreq','Make fewer synchronously HTTP requests for Javascript files','Decreasing the number of components on a page reduces the number of HTTP requests required to render the page, resulting in faster page loads. Combine your Javascript files into as few as possible (and load them asynchronously).');
 YSLOW.doc.addRuleInfo('longexpirehead','Have expires headers equals or longer than one year','Having really long cache headers are beneficial for caching.');
 YSLOW.doc.addRuleInfo('mindom', 'Reduce the number of DOM elements', 'A complex page means more bytes to download, and it also means slower DOM access in JavaScript.  Reduce the number of DOM elements on the page to improve performance.');
+YSLOW.doc.addRuleInfo('thirdpartyversions','Always use latest versions of third party javascripts','Always use the latest & greatest versions of third party javascripts, this is really important for JQuery, since the latest versions is always faster & better.');
+
 
 //
 // Tools text
