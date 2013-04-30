@@ -1088,7 +1088,7 @@ YSLOW.registerRule({
         score, offenders = 0;
 
 	if(typeof jQuery == 'function'){
-		if(SITESPEEDHELP.versionCompare(jQuery.fn.jquery, [1, 9, 1])) {
+		if(SITESPEEDHELP.versionCompare(jQuery.fn.jquery, [2, 0, 0])) {
         	message = "You are using an old version of JQuery: "+ jQuery.fn.jquery + " Newer version is faster & better. Upgrade to the newest version from http://jquery.com/" ;
       		offenders += 1; 	
       }
