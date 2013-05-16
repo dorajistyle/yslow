@@ -655,7 +655,7 @@ YSLOW.registerRule({
         message = (offenders.length > 0) ? YSLOW.util.plural(
                 'There %are% %num% static component%s%',
                 offenders.length
-            ) + ' without a expire header equal or longer than one year' : '';
+            ) + ' without a expire header equal or longer than one year.' : '';
 
          message += (skipped.length > 0) ? YSLOW.util.plural(' There %are% %num% static component%s% that are skipped from the score calculation', skipped.length) + ":" + skipped : '';
 
