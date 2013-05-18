@@ -238,7 +238,7 @@ YSLOW.Component.prototype.getEtag = function () {
 };
 
 YSLOW.Component.prototype.getMaxAge = function () {
-    var index, maxage, expires,
+    var index, maxage, expires = 'undefined',
         cache_control = this.headers['cache-control'];
 
     if (cache_control) {
