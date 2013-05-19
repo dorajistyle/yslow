@@ -141,16 +141,17 @@ YSLOW.Component.prototype.populateProperties = function (resolveRedirect, ignore
     that.uncompressed_size = that.body.length;
 
     // expiration based on either Expires or Cache-Control headers
-    // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.3
- 
-    if (that.getMaxAge() !== undefined) {
-	that.expires = that.getMaxAge();
-    }
-    else if (that.headers.expires && that.headers.expires.length > 0) {
-	    that.expires = new Date(that.headers.expires);   
+    expires = that.headers.expires;
+    if (expires && expires.length > 0) {
+        // set expires as a JS object
+        that.expires = new Date(expires);
+        if (that.expires.toString() === 'Invalid Date') {
+            that.expires = that.getMaxAge();
+        }
+    } else {
+        that.expires = that.getMaxAge();
     }
 
-    
     // compare image original dimensions with actual dimensions, data uri is
     // first attempted to get the orginal dimension, if it fails (btoa) then
     // another request to the orginal image is made
