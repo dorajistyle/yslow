@@ -143,7 +143,7 @@ YSLOW.Component.prototype.populateProperties = function (resolveRedirect, ignore
     // expiration based on either Expires or Cache-Control headers
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.3
  
-    if (that.getMaxAge() !== UNDEF) {
+    if (that.getMaxAge() !== undefined) {
 	that.expires = that.getMaxAge();
     }
     else if (that.headers.expires && that.headers.expires.length > 0) {
@@ -238,7 +238,7 @@ YSLOW.Component.prototype.getEtag = function () {
 };
 
 YSLOW.Component.prototype.getMaxAge = function () {
-    var index, maxage, expires = 'undefined',
+    var index, maxage, expires,
         cache_control = this.headers['cache-control'];
 
     if (cache_control) {
