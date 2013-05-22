@@ -255,6 +255,7 @@ urls.forEach(function (url) {
                 'resources: ' + JSON.stringify(resources) + ',' +
                 'args: ' + JSON.stringify(yslowArgs) + ',' +
                 'loadTime: ' + JSON.stringify(loadTime) + '};';
+	    
 
             // YSlow phantomjs controller
             controller = function () {
@@ -346,7 +347,66 @@ urls.forEach(function (url) {
 
                         comps.forEach(function (comp) {
 			    var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
+			    
+			    // if the component hasn't been fetched by phantomjs but discovered by yslow
+			    if (res.response === undefined) {
+				try {
+				    // fetch the asst
+				    xhr = new XMLHttpRequest();
+				    var startTime = new Date().getTime();
+				    xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
+				    xhr.send();
+				    var endTime = new Date().getTime();
+				   
+				    var headerName, h, i, len, m,
+					reHeader = /^([^:]+):\s*([\s\S]+)$/,
+					headers = xhr.getAllResponseHeaders(),
+					response = new Object(),
+					request = new Object();
+				    
+					h = headers.split('\n');
+					
+					// fake the request
+					request.headers = [];
+					request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+					request.method = "GET";
+					request.time="2013-05-22T20:40:33.381Z";
+					
+					// setup the response
+					response.bodySize = "-1";
+       					response.contentType = "";
+ 					response.headers = [];
+					response.id = "-1";
+					response.redirectURL = null;
+					response.stage = "end";
+					response.status = xhr.status;
+					// TODO measure the real time
+					response.time = endTime - startTime;
+					response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+					
+					// get the headers
+					h = headers.split('\n');
+					for (i = 0, len = h.length; i < len; i += 1) {
+					    m = reHeader.exec(h[i]);
+					
+					    if (m) {
+						response.headers.push({"name":m[1], "value":m[2]});
+					    }
+					}
 
+					res.response = response;
+					res.request = request;
+
+				} catch (err) {
+				    comp.body = {
+				    toString: function () {
+					    return '';
+					},
+				    length: response.bodySize || 0
+				    };
+
+			    }
+			    }
                             cset.addComponent(
                                 comp.href,
                                 comp.type,
