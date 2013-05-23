@@ -554,8 +554,7 @@ YSLOW.registerRule({
         // how many points to take for each component without Expires header
         points: 11,
         // component types to be inspected for expires headers
-        // Skipping favicon right now because of a bug somewhere that never even fetch it
-        types: ['css', 'js', 'image', 'cssimage', 'flash'] // , 'favicon'],
+        types: ['css', 'js', 'image', 'cssimage', 'flash','favicon'],
     },
 
     lint: function (doc, cset, config) {
@@ -610,8 +609,7 @@ YSLOW.registerRule({
     config: {
         // how many points to take for each component without Expires header
         points: 5,
-         // Skipping favicon right now because of a bug somewhere that never even fetch it
-        types: ['css', 'js', 'image', 'cssimage', 'flash'], // , 'favicon'],
+        types: ['css', 'js', 'image', 'cssimage', 'flash', 'favicon'],
         skip: ['https://secure.gaug.es/track.js','https://ssl.google-analytics.com/ga.js','http://www.google-analytics.com/ga.js']
     },
 
@@ -1111,8 +1109,8 @@ YSLOW.registerRule({
 
 
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-1.8',
-    name: 'Sitespeed.io rules v1.8',
+    id: 'sitespeed.io-1.8.1',
+    name: 'Sitespeed.io rules v1.8.1',
     rules: {
         criticalpath: {},
         spof: {},
@@ -1138,8 +1136,7 @@ YSLOW.registerRuleset({
         ycookiefree: {},
         ynofilter: {},
         yimgnoscale: {},
-        // skipping favicon for now, since it don't seems to work with phantomjs, always get size 0 and no cache header
-        // yfavicon: {},
+        yfavicon: {},
         thirdpartyasyncjs: {},
         cssprint: {},
         cssinheaddomain: {},
@@ -1180,7 +1177,7 @@ YSLOW.registerRuleset({
         ycookiefree: 3,
         ynofilter: 4,
         yimgnoscale: 3,
-        // yfavicon: 2,
+        yfavicon: 2,
         thirdpartyasyncjs: 10,
         cssprint: 3,
         cssinheaddomain: 8,
