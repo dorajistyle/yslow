@@ -345,7 +345,7 @@ urls.forEach(function (url) {
                                 return header;
                             };
 
-                        comps.forEach(function (comp) {
+                comps.forEach(function (comp) {
 			    var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
 			    
 			    // if the component hasn't been fetched by phantomjs but discovered by yslow
@@ -374,13 +374,12 @@ urls.forEach(function (url) {
 					
 					// setup the response
 					response.bodySize = "-1";
-       					response.contentType = "";
+       				response.contentType = "";
  					response.headers = [];
 					response.id = "-1";
 					response.redirectURL = null;
 					response.stage = "end";
 					response.status = xhr.status;
-					// TODO measure the real time
 					response.time = endTime - startTime;
 					response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
 					
@@ -397,15 +396,7 @@ urls.forEach(function (url) {
 					res.response = response;
 					res.request = request;
 
-				} catch (err) {
-				    comp.body = {
-				    toString: function () {
-					    return '';
-					},
-				    length: response.bodySize || 0
-				    };
-
-			    }
+				} catch (err) {}
 			    }
                             cset.addComponent(
                                 comp.href,
