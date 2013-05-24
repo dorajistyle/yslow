@@ -345,59 +345,60 @@ urls.forEach(function (url) {
                                 return header;
                             };
 
-                comps.forEach(function (comp) {
-			    var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
+                	comps.forEach(function (comp) {
+			    	var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
 			    
-			    // if the component hasn't been fetched by phantomjs but discovered by yslow
-			    if (res.response === undefined) {
-				try {
-				    // fetch the asst
-				    xhr = new XMLHttpRequest();
-				    var startTime = new Date().getTime();
-				    xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
-				    xhr.send();
-				    var endTime = new Date().getTime();
-				   
-				    var headerName, h, i, len, m,
-					reHeader = /^([^:]+):\s*([\s\S]+)$/,
-					headers = xhr.getAllResponseHeaders(),
-					response = new Object(),
-					request = new Object();
-				    
-					h = headers.split('\n');
-					
-					// fake the request
-					request.headers = [];
-					request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
-					request.method = "GET";
-					request.time="2013-05-22T20:40:33.381Z";
-					
-					// setup the response
-					response.bodySize = "-1";
-       				response.contentType = "";
- 					response.headers = [];
-					response.id = "-1";
-					response.redirectURL = null;
-					response.stage = "end";
-					response.status = xhr.status;
-					response.time = endTime - startTime;
-					response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
-					
-					// get the headers
-					h = headers.split('\n');
-					for (i = 0, len = h.length; i < len; i += 1) {
-					    m = reHeader.exec(h[i]);
-					
-					    if (m) {
-						response.headers.push({"name":m[1], "value":m[2]});
-					    }
-					}
+					// if the component hasn't been fetched by phantomjs but discovered by yslow
+					if (res.response === undefined) {
+						try {
+							var headerName, h, i, len, m, startTime, endTime,
+							reHeader = /^([^:]+):\s*([\s\S]+)$/,
+							headers, response = new Object(), request = new Object();
 
-					res.response = response;
-					res.request = request;
+							// fetch the asset
+							xhr = new XMLHttpRequest();
+							startTime = new Date().getTime();
+							xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
+							xhr.send();
+							endTime = new Date().getTime();
+							headers = xhr.getAllResponseHeaders();
+							h = headers.split('\n');
 
-				} catch (err) {}
-			    }
+							// fake the request
+							request.headers = [];
+							request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+							request.method = "GET";
+							request.time="2013-05-22T20:40:33.381Z";
+
+							// setup the response
+							// real values will be added to the component
+							// from the header
+							response.bodySize = "-1";
+							response.contentType = "";
+							response.headers = [];
+							response.id = "-1";
+							response.redirectURL = null;
+							response.stage = "end";
+							response.status = xhr.status;
+							response.time = endTime - startTime;
+							response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+
+							// get the headers
+							h = headers.split('\n');
+							for (i = 0, len = h.length; i < len; i += 1) {
+								m = reHeader.exec(h[i]);
+								if (m) {
+									response.headers.push({"name":m[1], "value":m[2]});
+					    		}
+							}
+								
+							res.response = response;
+							res.request = request;
+						
+							} catch (err) {
+								console.log(err);
+							}
+			    		}	
                             cset.addComponent(
                                 comp.href,
                                 comp.type,
