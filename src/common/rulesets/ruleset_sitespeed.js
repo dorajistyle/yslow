@@ -876,7 +876,7 @@ YSLOW.registerRule({
 
         if (css.length > config.max_css) {
             score -= (css.length - config.max_css) * config.points_css;
-            message = 'This page has ' + YSLOW.util.plural('%num% external stylesheet%s%', css.length) + '. Try combining them into one.';
+            message = 'This page has ' + YSLOW.util.plural('%num% external stylesheet%s%', css.length) + '. Try combining them into fewer requests.';
 
             for (var i = 0; i < css.length; i++) {
               offenders.push(css[i].url);
@@ -907,7 +907,7 @@ YSLOW.registerRule({
 
         if (cssimages.length > config.max_cssimages) {
             score -= (cssimages.length  -config.max_cssimages) * config.points_cssimages;
-            message = 'This page has ' + YSLOW.util.plural('%num% external css image%s%', cssimages.length) + '. Try combining them into one.';
+            message = 'This page has ' + YSLOW.util.plural('%num% external css image%s%', cssimages.length) + '. Try combining them into fewer request.';
             
             for (var i = 0; i < cssimages.length; i++) {
               offenders.push(cssimages[i].url);
@@ -956,7 +956,7 @@ YSLOW.registerRule({
 
     if (offender_comps.length > config.max_js) { 
     message = 'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
-        ' loaded synchronously that could be combined into one.';
+        ' loaded synchronously that could be combined into fewer requests.';
     score -= (offender_comps.length - config.max_js) * parseInt(config.points_js, 10);
     }
   
