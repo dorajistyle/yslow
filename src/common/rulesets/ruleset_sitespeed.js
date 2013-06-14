@@ -955,7 +955,7 @@ YSLOW.registerRule({
 
 
     if (offender_comps.length > config.max_js) { 
-    message = 'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
+    message = 'There ' + YSLOW.util.plural('%are% %num% script%s%', offender_comps.length) +
         ' loaded synchronously that could be combined into fewer requests.';
     score -= (offender_comps.length - config.max_js) * parseInt(config.points_js, 10);
     }
@@ -1077,7 +1077,7 @@ YSLOW.registerRule({
     url: 'http://sitespeed.io/rules/#thirdpartyversions',
     category: ['js'],
     config: { 
-    	// points to take out for each js that is old
+	   // points to take out for each js that is old
         points: 10
         },
 
@@ -1102,6 +1102,52 @@ YSLOW.registerRule({
     }
 });
 
+
+YSLOW.registerRule({
+    id: 'avoidscalingimages',
+    name: 'Never scale images in HTML',
+    info: 'Always use the correct size for images to avoid that a browser download an image that is larger than necessary.',
+    url: 'http://sitespeed.io/rules/#avoidscalingimages',
+    category: ['images'],
+    config: { 
+        points: 5,
+        // let have a margin of when to fail
+        margin: 20
+        },
+
+    lint: function (doc, cset, config) {
+        var message = '',
+        score, offenders =[],
+        hash = {},
+        comps = cset.getComponentsByType('image'),
+        images = doc.getElementsByTagName('img');
+        
+        // go through all images
+        for(var i = 0; i < images.length; i++){
+          var img = images[i];
+          // skip images that are 0 (carousell etc) and fail if wider than margin
+          if ((img.clientWidth + config.margin) < img.naturalWidth && img.clientWidth > 0) {
+            message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';       
+            hash[img.src] = 1;
+          }
+        }
+
+        for (var i = 0; i < comps.length; i++) {
+          if (hash[comps[i].url]) {
+            offenders.push(comps[i]);
+          }
+        }
+    
+        score = 100 - offenders.length * parseInt(config.points, 20);
+
+
+        return {
+          score: score,
+          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled in the HTML:' + message,offenders.length ) : '',
+          components: offenders
+        };
+    }
+});
 
 
 
@@ -1135,7 +1181,8 @@ YSLOW.registerRuleset({
         ymincookie: {},
         ycookiefree: {},
         ynofilter: {},
-        yimgnoscale: {},
+        // yimgnoscale: {},
+        avoidscalingimages: {},
         yfavicon: {},
         thirdpartyasyncjs: {},
         cssprint: {},
@@ -1151,7 +1198,6 @@ YSLOW.registerRuleset({
         thirdpartyversions: {}
     },
     weights: {
-    	
         criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
@@ -1176,7 +1222,8 @@ YSLOW.registerRuleset({
         ymincookie: 3,
         ycookiefree: 3,
         ynofilter: 4,
-        yimgnoscale: 3,
+        // yimgnoscale: 3,
+        avoidscalingimages: 5,
         yfavicon: 2,
         thirdpartyasyncjs: 10,
         cssprint: 3,
