@@ -1159,7 +1159,7 @@ YSLOW.registerRuleset({
     id: 'sitespeed.io-1.9',
     name: 'Sitespeed.io rules v1.9',
     rules: {
-        /*criticalpath: {},
+        criticalpath: {},
         spof: {},
         cssnumreq: {},
         cssimagesnumreq: {},
@@ -1182,7 +1182,7 @@ YSLOW.registerRuleset({
         ymincookie: {},
         ycookiefree: {},
         ynofilter: {},
-        // yimgnoscale: {},*/
+        // yimgnoscale: {},
         avoidscalingimages: {},
         yfavicon: {},
         thirdpartyasyncjs: {},
@@ -1199,7 +1199,7 @@ YSLOW.registerRuleset({
         thirdpartyversions: {}
     },
     weights: {
-        /*criticalpath: 15,
+        criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
         cssnumreq: 8,
@@ -1223,7 +1223,7 @@ YSLOW.registerRuleset({
         ymincookie: 3,
         ycookiefree: 3,
         ynofilter: 4,
-        // yimgnoscale: 3,*/
+        // yimgnoscale: 3,
         avoidscalingimages: 5,
         yfavicon: 2,
         thirdpartyasyncjs: 10,
