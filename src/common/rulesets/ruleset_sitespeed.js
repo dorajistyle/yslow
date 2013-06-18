@@ -1142,8 +1142,6 @@ YSLOW.registerRule({
         }
     
         score = 100 - ((offenders.length-punish) * 2) - (punish*10);
-
-
         return {
           score: score,
           message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled in the HTML:' + message,offenders.length ) : '',
