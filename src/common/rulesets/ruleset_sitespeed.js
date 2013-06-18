@@ -1110,7 +1110,6 @@ YSLOW.registerRule({
     url: 'http://sitespeed.io/rules/#avoidscalingimages',
     category: ['images'],
     config: { 
-        points: 5,
         // let have a margin of when to fail
         margin: 20
         },
@@ -1118,17 +1117,21 @@ YSLOW.registerRule({
     lint: function (doc, cset, config) {
         var message = '',
         score, offenders =[],
-        hash = {},
+        hash = {}, reallyBadLimit = 100, punish = 0,
         comps = cset.getComponentsByType('image'),
         images = doc.getElementsByTagName('img');
         
         // go through all images
         for(var i = 0; i < images.length; i++){
           var img = images[i];
-          // skip images that are 0 (carousell etc) and fail if wider than margin
-          if ((img.clientWidth + config.margin) < img.naturalWidth && img.clientWidth > 0) {
+          // skip images that are 0 (carousell etc) 
+          if (img.clientWidth  < img.naturalWidth && img.clientWidth > 0) {
             message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';       
             hash[img.src] = 1;
+            
+            // punish hard if the reallyBadLimitExceeds
+            if ((img.clientWidth + reallyBadLimit) < img.naturalWidth)
+              punish++;
           }
         }
 
@@ -1138,7 +1141,7 @@ YSLOW.registerRule({
           }
         }
     
-        score = 100 - offenders.length * parseInt(config.points, 20);
+        score = 100 - ((offenders.length-punish) * 5) - (punish*20);
 
 
         return {
