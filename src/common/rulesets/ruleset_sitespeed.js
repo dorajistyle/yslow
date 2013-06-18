@@ -1110,25 +1110,28 @@ YSLOW.registerRule({
     url: 'http://sitespeed.io/rules/#avoidscalingimages',
     category: ['images'],
     config: { 
-        points: 5,
-        // let have a margin of when to fail
-        margin: 20
+        // if an image is more than X px in width, punish the page harder
+        reallyBadLimit: 100
         },
 
     lint: function (doc, cset, config) {
         var message = '',
         score, offenders =[],
-        hash = {},
+        hash = {}, punish = 0,
         comps = cset.getComponentsByType('image'),
         images = doc.getElementsByTagName('img');
         
         // go through all images
         for(var i = 0; i < images.length; i++){
           var img = images[i];
-          // skip images that are 0 (carousell etc) and fail if wider than margin
-          if ((img.clientWidth + config.margin) < img.naturalWidth && img.clientWidth > 0) {
+          // skip images that are 0 (carousell etc) 
+          if (img.clientWidth  < img.naturalWidth && img.clientWidth > 0) {
             message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';       
             hash[img.src] = 1;
+            
+            // punish hard if the reallyBadLimitExceeds
+            if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth)
+              punish++;
           }
         }
 
@@ -1138,7 +1141,7 @@ YSLOW.registerRule({
           }
         }
     
-        score = 100 - offenders.length * parseInt(config.points, 20);
+        score = 100 - ((offenders.length-punish) * 2) - (punish*10);
 
 
         return {
@@ -1158,7 +1161,7 @@ YSLOW.registerRuleset({
     id: 'sitespeed.io-1.9',
     name: 'Sitespeed.io rules v1.9',
     rules: {
-        criticalpath: {},
+        /*criticalpath: {},
         spof: {},
         cssnumreq: {},
         cssimagesnumreq: {},
@@ -1181,7 +1184,7 @@ YSLOW.registerRuleset({
         ymincookie: {},
         ycookiefree: {},
         ynofilter: {},
-        // yimgnoscale: {},
+        // yimgnoscale: {},*/
         avoidscalingimages: {},
         yfavicon: {},
         thirdpartyasyncjs: {},
@@ -1198,7 +1201,7 @@ YSLOW.registerRuleset({
         thirdpartyversions: {}
     },
     weights: {
-        criticalpath: 15,
+        /*criticalpath: 15,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
         cssnumreq: 8,
@@ -1222,7 +1225,7 @@ YSLOW.registerRuleset({
         ymincookie: 3,
         ycookiefree: 3,
         ynofilter: 4,
-        // yimgnoscale: 3,
+        // yimgnoscale: 3,*/
         avoidscalingimages: 5,
         yfavicon: 2,
         thirdpartyasyncjs: 10,
