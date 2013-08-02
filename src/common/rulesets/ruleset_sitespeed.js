@@ -144,6 +144,37 @@ YSLOW.registerRule({
 });  
 
 YSLOW.registerRule({
+  id: 'ttfb',
+  name: 'Time to first byte',
+  info: 'It is important to have low time to the first byte to be able to render the page fast',
+  category: ['server'],
+  config: {points: 20},
+  url: 'http://sitespeed.io/rules/#ttfb',
+  
+  lint: function (doc, cset, config) {
+  var i, score = 100, ttfb, comps = cset.getComponentsByType('doc');
+
+     for (i = 0, len = comps.length; i < len; i++) {
+          ttfb = comps[i].ttfb;
+          if (ttfb > 500) {
+            // The limit is 500, for every 100 ms, remove 10 points
+            score = 99 - Math.ceil(ttfb - 500) /
+                100 * 10;
+          }
+      }
+      
+      return {
+      score: score,
+      message: (score < 100) ? 'The TTFB is too slow ' + ttfb
+           : '',
+      components: [''+ttfb]
+    };
+
+   }
+});  
+
+
+YSLOW.registerRule({
   id: 'cssinheaddomain',
   name: 'Load CSS in head from document domain',
   info: 'Make sure css in head is loaded from same domain as document, in order to have a better user experience and minimize dns lookups',
@@ -1160,6 +1191,7 @@ YSLOW.registerRuleset({
     name: 'Sitespeed.io rules v1.9',
     rules: {
         criticalpath: {},
+        ttfb: {},
         spof: {},
         cssnumreq: {},
         cssimagesnumreq: {},
@@ -1200,6 +1232,7 @@ YSLOW.registerRuleset({
     },
     weights: {
         criticalpath: 15,
+        ttfb: 10,
         // Low since we fetch all different domains, not only 3rd parties
         spof: 5,
         cssnumreq: 8,

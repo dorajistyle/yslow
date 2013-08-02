@@ -147,6 +147,9 @@ urls.forEach(function (url) {
         page.resources[req.url] = {
             request: req
         };
+
+        req['starttime'] = req.time.getTime();
+       
     };
 
     // response
@@ -156,6 +159,9 @@ urls.forEach(function (url) {
 
         if (!resp) {
             page.resources[res.url].response = res;
+            if (res.stage === 'start') 
+                page.resources[res.url].response['starttime'] = res.time.getTime();
+
         } else {
             for (info in res) {
                 if (res.hasOwnProperty(info)) {
@@ -163,6 +169,7 @@ urls.forEach(function (url) {
                 }
             }
         }
+
     };
 
     // enable console output, useful for debugging

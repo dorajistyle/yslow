@@ -16,7 +16,8 @@ YSLOW.Component.prototype.setComponentDetails = function (o) {
 
         parse = function (request, response) {
             var xhr;
-
+    
+            comp.ttfb = response.starttime - request.starttime;
             // copy from the response object
             comp.status = response.status;
             comp.headers = {};
