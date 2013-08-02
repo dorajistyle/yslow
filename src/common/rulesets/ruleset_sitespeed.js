@@ -156,16 +156,16 @@ YSLOW.registerRule({
 
      for (i = 0, len = comps.length; i < len; i++) {
           ttfb = comps[i].ttfb;
-          if (ttfb > 500) {
-            // The limit is 500, for every 100 ms, remove 10 points
-            score = 99 - Math.ceil(ttfb - 500) /
+          if (ttfb > 300) {
+            // The limit is 300, for every 100 ms, remove 10 points
+            score = 99 - Math.ceil(ttfb - 300) /
                 100 * 10;
           }
       }
       
       return {
       score: score,
-      message: (score < 100) ? 'The TTFB is too slow ' + ttfb
+      message: (score < 100) ? 'The TTFB is too slow: ' + ttfb
            : '',
       components: [''+ttfb]
     };
