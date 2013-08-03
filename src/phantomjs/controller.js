@@ -14,6 +14,107 @@
 
 // For using yslow in phantomjs, see instructions @ https://github.com/marcelduran/yslow/wiki/PhantomJS
 
+
+// FROM netsniff.js
+if (!Date.prototype.toISOString) {
+    Date.prototype.toISOString = function () {
+        function pad(n) { return n < 10 ? '0' + n : n; }
+        function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
+        return this.getFullYear() + '-' +
+            pad(this.getMonth() + 1) + '-' +
+            pad(this.getDate()) + 'T' +
+            pad(this.getHours()) + ':' +
+            pad(this.getMinutes()) + ':' +
+            pad(this.getSeconds()) + '.' +
+            ms(this.getMilliseconds()) + 'Z';
+    }
+}
+
+function createHAR(address, title, startTime, resources, loadTime)
+{
+    var entries = [];
+
+    resources.forEach(function (resource) {
+        var request = resource.request,
+            startReply = resource.startReply,
+            endReply = resource.endReply;
+
+        if (!request || !startReply || !endReply) {
+            return;
+        }
+
+        // Exclude Data URI from HAR file because
+        // they aren't included in specification
+        if (request.url.match(/(^data:image\/.*)/i)) {
+            return;
+    }
+
+        entries.push({
+            startedDateTime: request.time.toISOString(),
+            time: endReply.time - request.time,
+            request: {
+                method: request.method,
+                url: request.url,
+                httpVersion: "HTTP/1.1",
+                cookies: [],
+                headers: request.headers,
+                queryString: [],
+                headersSize: -1,
+                bodySize: -1
+            },
+            response: {
+                status: endReply.status,
+                statusText: endReply.statusText,
+                httpVersion: "HTTP/1.1",
+                cookies: [],
+                headers: endReply.headers,
+                redirectURL: "",
+                headersSize: -1,
+                bodySize: startReply.bodySize,
+                content: {
+                    size: startReply.bodySize,
+                    mimeType: endReply.contentType
+                }
+            },
+            cache: {},
+            timings: {
+                blocked: 0,
+                dns: -1,
+                connect: -1,
+                send: 0,
+                wait: startReply.time - request.time,
+                receive: endReply.time - startReply.time,
+                ssl: -1
+            },
+            pageref: address
+        });
+    });
+
+    return {
+        log: {
+            version: '1.2',
+            creator: {
+                name: "PhantomJS",
+                version: phantom.version.major + '.' + phantom.version.minor +
+                    '.' + phantom.version.patch
+            },
+            pages: [{
+                startedDateTime: startTime.toISOString(),
+                id: address,
+                title: title,
+                pageTimings: {
+                    onLoad: loadTime
+                }
+            }],
+            entries: entries
+        }
+    };
+}
+
+
+// END from netsniff.js
+
+
 // parse args
 var i, arg, page, urlCount, viewport,
     webpage = require('webpage'),
@@ -29,7 +130,8 @@ var i, arg, page, urlCount, viewport,
         viewport: false,
         headers: false,
         console: 0,
-        threshold: 80
+        threshold: 80,
+        harfilename: ''
     },
     unaryArgs = {
         help: false,
@@ -50,7 +152,8 @@ var i, arg, page, urlCount, viewport,
         b: 'beacon',
         v: 'verbose',
         t: 'threshold',
-        ch: 'headers'
+        ch: 'headers',
+        n: 'harfilename'
     };
 
 // loop args
@@ -114,6 +217,7 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -vp, --viewport <WxH>    specify page viewport size WxY, where W = width and H = height [400x300]',
         '    -ch, --headers <JSON>    specify custom request headers, e.g.: -ch \'{"Cookie": "foo=bar"}\'',
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
+        '    -n, --harfilename <filename>    the name of the HAR file, if no name is supplied, no HAR is created',
         '',
         '  Examples:',
         '',
@@ -138,9 +242,15 @@ urls.forEach(function (url) {
     var page = webpage.create();
 
     page.resources = {};
+    page.harresources = [];
+
 
     // allow x-domain requests, used to retrieve components content
     page.settings.webSecurityEnabled = false;
+
+    page.onLoadStarted = function () {
+        page.startTime = new Date();
+    };
 
     // request
     page.onResourceRequested = function (req) {
@@ -148,7 +258,15 @@ urls.forEach(function (url) {
             request: req
         };
 
+        // used when gettiong TTFB
         req['starttime'] = req.time.getTime();
+
+        // when getting the HAR
+        page.harresources[req.id] = {
+            request: req,
+            startReply: null,
+            endReply: null
+        };
        
     };
 
@@ -159,6 +277,7 @@ urls.forEach(function (url) {
 
         if (!resp) {
             page.resources[res.url].response = res;
+            // when getting TTFB
             if (res.stage === 'start') 
                 page.resources[res.url].response['starttime'] = res.time.getTime();
 
@@ -168,6 +287,14 @@ urls.forEach(function (url) {
                     resp[info] = res[info];
                 }
             }
+        }
+
+        // for HAR
+         if (res.stage === 'start') {
+            page.harresources[res.id].startReply = res;
+        }
+        if (res.stage === 'end') {
+            page.harresources[res.id].endReply = res;
         }
 
     };
@@ -240,7 +367,7 @@ urls.forEach(function (url) {
         } else {
             // page load time
             loadTime = new Date() - startTime;
-
+    
             // set resources response time
             for (url in resources) {
                 if (resources.hasOwnProperty(url)) {
@@ -250,6 +377,20 @@ urls.forEach(function (url) {
                     }
                 }
             }
+
+            // generate HAR 
+            
+            page.title = page.evaluate(function () {
+                return document.title;
+            });
+            har = createHAR(page.address, page.title, page.startTime, page.harresources, loadTime);
+           
+            var fs = require('fs');
+            if (yslowArgs.harfilename.length>0) {
+                if (!fs.exists(yslowArgs.harfilename))
+                    fs.write(yslowArgs.harfilename,JSON.stringify(har, undefined, 4),'w');
+            }
+            // end generate har
 
             // yslow wrapper to be evaluated by page
             yslow = function () {
