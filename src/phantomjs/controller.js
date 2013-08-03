@@ -243,6 +243,7 @@ urls.forEach(function (url) {
 
     page.resources = {};
     page.harresources = [];
+    page.address = url;
 
 
     // allow x-domain requests, used to retrieve components content
