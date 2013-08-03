@@ -116,7 +116,7 @@ YSLOW.doc.addRuleInfo('mindom', 'Reduce the number of DOM elements', 'A complex 
 YSLOW.doc.addRuleInfo('thirdpartyversions','Always use latest versions of third party javascripts','Always use the latest & greatest versions of third party javascripts, this is really important for JQuery, since the latest versions is always faster & better.');
 YSLOW.doc.addRuleInfo('avoidscalingimages', 'Never scale images in HTML', 'Images should always be sent with the correct size else the browser will download an image that is larger than necessary. This is more important today with responsive web design, meaning you want to avoid downloading non scaled images to a mobile phone or tablet. Note: This rule doesn\t check images with size 0 (images in carousels etc), so they will be missed by the rule.');
 
-YSLOW.doc.addRuleInfo('ttfb','','');
+YSLOW.doc.addRuleInfo('ttfb','Keep the time to first byte low','The time to first byte should be as low as possible, so that the browser can start processing the content.');
 
 //
 // Tools text
