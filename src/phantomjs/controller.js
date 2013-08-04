@@ -259,7 +259,7 @@ urls.forEach(function (url) {
             request: req
         };
 
-        // used when gettiong TTFB
+        // used when getting TTFB
         req['starttime'] = req.time.getTime();
 
         // when getting the HAR
@@ -273,6 +273,16 @@ urls.forEach(function (url) {
 
     // response
     page.onResourceReceived = function (res) {
+        
+        // for HAR
+         if (res.stage === 'start') {
+            page.harresources[res.id].startReply = res;
+        }
+        if (res.stage === 'end') {
+            page.harresources[res.id].endReply = res;
+        }
+
+
         var info,
             resp = page.resources[res.url].response;
 
@@ -288,14 +298,6 @@ urls.forEach(function (url) {
                     resp[info] = res[info];
                 }
             }
-        }
-
-        // for HAR
-         if (res.stage === 'start') {
-            page.harresources[res.id].startReply = res;
-        }
-        if (res.stage === 'end') {
-            page.harresources[res.id].endReply = res;
         }
 
     };
@@ -368,16 +370,6 @@ urls.forEach(function (url) {
         } else {
             // page load time
             loadTime = new Date() - startTime;
-    
-            // set resources response time
-            for (url in resources) {
-                if (resources.hasOwnProperty(url)) {
-                    resp = resources[url].response;
-                    if (resp) {
-                        resp.time = new Date(resp.time) - startTime;
-                    }
-                }
-            }
 
             // generate HAR 
             
@@ -392,6 +384,16 @@ urls.forEach(function (url) {
                     fs.write(yslowArgs.harfilename,JSON.stringify(har, undefined, 4),'w');
             }
             // end generate har
+
+             // set resources response time
+            for (url in resources) {
+                if (resources.hasOwnProperty(url)) {
+                    resp = resources[url].response;
+                    if (resp) {
+                        resp.time = new Date(resp.time) - startTime;
+                    }
+                }
+            }
 
             // yslow wrapper to be evaluated by page
             yslow = function () {
