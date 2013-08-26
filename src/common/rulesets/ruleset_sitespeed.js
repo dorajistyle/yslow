@@ -1187,8 +1187,8 @@ YSLOW.registerRule({
 
 
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-1.9',
-    name: 'Sitespeed.io rules v1.9',
+    id: 'sitespeed.io-2.0',
+    name: 'Sitespeed.io rules v2.0',
     rules: {
         criticalpath: {},
         ttfb: {},
