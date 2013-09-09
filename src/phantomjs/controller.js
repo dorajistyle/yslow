@@ -245,6 +245,9 @@ urls.forEach(function (url) {
     page.resources = {};
     page.harresources = [];
     page.address = url;
+    // this is a hack for sitespeed.io 2.0 for solving the 
+    // redirect issue in YSLow. Hopefully a nicer 
+    page.redirects = [];
 
 
     // allow x-domain requests, used to retrieve components content
@@ -281,6 +284,10 @@ urls.forEach(function (url) {
         }
         if (res.stage === 'end') {
             page.harresources[res.id].endReply = res;
+
+        if (res.status === 301 || res.status === 302)
+            page.redirects.push('From ' + res.url + ' to ' + res.headers[0].value + '.');
+        
         }
 
 
@@ -406,7 +413,9 @@ urls.forEach(function (url) {
             ysphantomjs = 'YSLOW.phantomjs = {' +
                 'resources: ' + JSON.stringify(resources) + ',' +
                 'args: ' + JSON.stringify(yslowArgs) + ',' +
-                'loadTime: ' + JSON.stringify(loadTime) + '};';
+                'loadTime: ' + JSON.stringify(loadTime) + ',' +
+                'redirects: ' + JSON.stringify(page.redirects) 
+                + '};';
 	    
 
             // YSlow phantomjs controller
@@ -425,6 +434,7 @@ urls.forEach(function (url) {
                             resources = ysphantomjs.resources,
                             args = ysphantomjs.args,
                             ysutil = ys.util,
+
 
                             // format out with appropriate content type
                             formatOutput = function (content) {
@@ -564,12 +574,16 @@ urls.forEach(function (url) {
                             );
                         });
 
+
                         // refinement
                         cset.inline = ysutil.getInlineTags(doc);
                         cset.domElementsCount = ysutil.countDOMElements(doc);
                         cset.cookies = cset.doc_comp.cookie;
                         cset.components = ysutil.setInjected(doc,
                             cset.components, cset.doc_comp.body);
+                       
+                        // hack for sitespeed.io 2.0
+                        cset.redirects = ysphantomjs.redirects;
 
                         // run analysis
                         yscontext.component_set = cset;

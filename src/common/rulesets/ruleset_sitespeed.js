@@ -1182,6 +1182,37 @@ YSLOW.registerRule({
 });
 
 
+/**
+** This is a hack for sitespeed.io 2.0. The original YSLow rule doesn't work for PhantomJS 
+** see why https://github.com/soulgalore/sitespeed.io/issues/243
+*/
+YSLOW.registerRule({
+    id: 'redirects',
+    name: 'Never do redirects',
+    info: 'Avoid doing redirects, it will kill you web page on mobile.',
+    url: 'http://sitespeed.io/rules/#redirects',
+    category: ['content'],
+
+    config: {
+        points: 10 // the penalty for each redirect
+    },
+
+    lint: function (doc, cset, config) {
+        var score;
+       
+        score = 100 - cset.redirects.length * parseInt(config.points, 10);
+
+        return {
+            score: score,
+            message: (cset.redirects.length > 0) ? YSLOW.util.plural(
+                'There %are% %num% redirect%s%.',
+                cset.redirects.length
+            ) + " " + cset.redirects: '',
+            components: []
+        };
+    }
+});
+
 
 /* End */
 
@@ -1204,7 +1235,7 @@ YSLOW.registerRuleset({
         yexternal: {},
         ydns: {},
         yminify: {},
-        yredirects: {},
+        redirects: {},
         noduplicates: {},
         yetags: {},
         yxhr: {},
@@ -1214,7 +1245,6 @@ YSLOW.registerRuleset({
         ymincookie: {},
         ycookiefree: {},
         ynofilter: {},
-        // yimgnoscale: {},
         avoidscalingimages: {},
         yfavicon: {},
         thirdpartyasyncjs: {},
@@ -1246,7 +1276,7 @@ YSLOW.registerRuleset({
         yexternal: 4,
         ydns: 3,
         yminify: 4,
-        yredirects: 4,
+        redirects: 4,
         noduplicates: 4,
         yetags: 2,
         yxhr: 4,
@@ -1256,7 +1286,6 @@ YSLOW.registerRuleset({
         ymincookie: 3,
         ycookiefree: 3,
         ynofilter: 4,
-        // yimgnoscale: 3,
         avoidscalingimages: 5,
         yfavicon: 2,
         thirdpartyasyncjs: 10,
