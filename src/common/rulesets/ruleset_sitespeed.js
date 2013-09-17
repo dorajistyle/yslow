@@ -128,7 +128,7 @@ YSLOW.registerRule({
         offenders.push(comps[i]);
       }
     }
-      score = 100 - offenders.length * parseInt(config.points, 20);
+      score = 100 - offenders.length * parseInt(config.points, 10);
       
       return {
       score: score,
@@ -148,24 +148,24 @@ YSLOW.registerRule({
   name: 'Time to first byte',
   info: 'It is important to have low time to the first byte to be able to render the page fast',
   category: ['server'],
-  config: {points: 20},
+  config: {points: 10, limitInMs: 300, hurtEveryMs: 100},
   url: 'http://sitespeed.io/rules/#ttfb',
   
   lint: function (doc, cset, config) {
-  var i, score = 100, ttfb, comps = cset.getComponentsByType('doc');
+  var i, limit = parseInt(config.limitInMs, 10), hurtEveryMs = parseInt(config.hurtEveryMs, 10), score, ttfb, comps = cset.getComponentsByType('doc');
 
      for (i = 0, len = comps.length; i < len; i++) {
           ttfb = comps[i].ttfb;
-          if (ttfb > 300) {
-            // The limit is 300, for every 100 ms, remove 10 points
-            score = 99 - Math.ceil(ttfb - 300) /
-                100 * 10;
+          if (ttfb > limit) {
+            // The limit is limit, for every hurtEveryMs, remove X points
+            score = 100 - (Math.ceil((ttfb - limit)/hurtEveryMs) 
+                 * parseInt(config.points, 10));
           }
       }
-      
-      return {
+    
+     return {
       score: score,
-      message: (score < 100) ? 'The TTFB is too slow: ' + ttfb
+      message: (score < 100) ? 'The TTFB is too slow:' + ttfb + ' ms. The limit is ' + limit + ' ms and for every ' + hurtEveryMs + ' ms points are removed'
            : '',
       components: [''+ttfb]
     };
