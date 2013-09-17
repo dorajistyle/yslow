@@ -162,7 +162,10 @@ YSLOW.registerRule({
                  * parseInt(config.points, 10));
           }
       }
-    
+  
+    if (score<0)
+        score=0;
+
      return {
       score: score,
       message: (score < 100) ? 'The TTFB is too slow:' + ttfb + ' ms. The limit is ' + limit + ' ms and for every ' + hurtEveryMs + ' ms points are removed'
