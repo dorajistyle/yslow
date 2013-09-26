@@ -285,12 +285,17 @@ urls.forEach(function (url) {
         if (res.stage === 'end') {
             page.harresources[res.id].endReply = res;
 
-        if (res.status === 301 || res.status === 302)
-            page.redirects.push('From ' + res.url + ' to ' + res.headers[0].value + '.');
-        
+        if (res.status === 301 || res.status === 302) {
+                var locationValue;
+
+            for (var i = 0; i < res.headers.length; i++) {
+                if (res.headers[i].name==='Location')
+                    locationValue = res.headers[i].value;
+            }    
+           page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');        
         }
-
-
+        }
+        
         var info,
             resp = page.resources[res.url].response;
 
