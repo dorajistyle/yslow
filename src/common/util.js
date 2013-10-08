@@ -394,7 +394,7 @@ YSLOW.util = {
      * @return {Boolean} TRUE if ETag is good, FALSE otherwise
      */
     isETagGood: function (etag) {
-        var reIIS = /^[0-9a-f]+:[0-9a-f]+$/,
+        var reIIS = /^[0-9a-f]+:([1-9a-f]|[0-9a-f]{2,})$/,
             reApache = /^[0-9a-f]+\-[0-9a-f]+\-[0-9a-f]+$/;
 
         if (!etag) {
@@ -836,6 +836,7 @@ YSLOW.util = {
             }
         }
 
+        params.v = YSLOW.version;
         params.w = parseInt(yscontext.PAGE.totalSize, 10);
         params.o = parseInt(yscontext.PAGE.overallScore, 10);
         params.u = encodeURIComponent(yscontext.result_set.url);

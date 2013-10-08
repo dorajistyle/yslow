@@ -132,7 +132,8 @@ var i, arg, page, urlCount, viewport,
         headers: false,
         console: 0,
         threshold: 80,
-        harfilename: ''
+        harfilename: '',
+        cdns: ''
     },
     unaryArgs = {
         help: false,
@@ -219,6 +220,7 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -ch, --headers <JSON>    specify custom request headers, e.g.: -ch \'{"Cookie": "foo=bar"}\'',
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
         '    -n, --harfilename <filename>    the name of the HAR file, if no name is supplied, no HAR is created',
+        '    --cdns "<list>"          specify comma separated list of additional CDNs',
         '',
         '  Examples:',
         '',
@@ -425,6 +427,7 @@ urls.forEach(function (url) {
 
             // YSlow phantomjs controller
             controller = function () {
+                var Preferences;
                 YSLOW.phantomjs.run = function () {
                     try {
                         var results, xhr, output, threshold,
@@ -439,6 +442,7 @@ urls.forEach(function (url) {
                             resources = ysphantomjs.resources,
                             args = ysphantomjs.args,
                             ysutil = ys.util,
+                            preferences,
 
 
                             // format out with appropriate content type
@@ -512,6 +516,7 @@ urls.forEach(function (url) {
                                 return header;
                             };
 
+
 	                comps.forEach(function (comp) {
                     var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
                 
@@ -556,29 +561,32 @@ urls.forEach(function (url) {
                                 m = reHeader.exec(h[i]);
                                 if (m) {
                                     response.headers.push({"name":m[1], "value":m[2]});
-                                }
-                            }
+                                        }
+                                    }
+                                        
+                                    res.response = response;
+                                    res.request = request;
                                 
-                            res.response = response;
-                            res.request = request;
-                        
-                            } catch (err) {
-                                console.log(err);
-                            }
-                        }   
-                           
-                        cset.addComponent(
-                             comp.href,
-                             comp.type,
-                             comp.base || baseHref,
-                             {
-                                 obj: comp.obj,
-                                 request: res.request,
-                                 response: res.response
+                                    } catch (err) {
+                                        console.log(err);
+                                    }
+                                } 
+
+                            cset.addComponent(
+                                comp.href,
+                                comp.type,
+                                comp.base || baseHref,
+                                {
+                                    obj: comp.obj,
+                                    request: res.request,
+                                    response: res.response
                              }
                             );
                         });
 
+                        preferences = new Preferences();
+                        preferences.setPref('cdnHostnames', args.cdns);
+                        ysutil.Preference.registerNative(preferences);
 
                         // refinement
                         cset.inline = ysutil.getInlineTags(doc);
@@ -642,6 +650,28 @@ urls.forEach(function (url) {
                     } catch (err) {
                         return err;
                     }
+                };
+                // Implement a bare minimum preferences object to be able to use custom CDN URLs
+                Preferences = function () {
+                    this.prefs = {};
+                };
+                Preferences.prototype.getPref = function (name, defaultValue) {
+                    return this.prefs.hasOwnProperty(name) ? this.prefs[name] : defaultValue;
+                };
+                Preferences.prototype.setPref = function (name, value) {
+                    this.prefs[name] = value;
+                };
+                Preferences.prototype.deletePref = function (name) {
+                    delete this.prefs[name];
+                };
+                Preferences.prototype.getPrefList = function (branch_name, default_value) {
+                    var values = [], key;
+                    for (key in this.prefs) {
+                        if (this.prefs.hasOwnProperty(key) && key.indexOf(branch_name) === 0) {
+                            values.push({ 'name': key, 'value': this.prefs[key] });
+                        }
+                    }
+                    return values.length === 0 ? default_value : values;
                 };
 
                 return YSLOW.phantomjs.run();
