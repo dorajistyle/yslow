@@ -446,7 +446,15 @@ YSLOW.registerRule({
   name: 'Frontend single point of failure',
   info: 'A page should not have a single point of failure a.k.a load content from a provider that can get the page to stop working.',
   category: ['misc'],
-  config: {jsPoints: 10, cssPoints: 8, fontFaceInCssPoints: 8, inlineFontFacePoints: 1},
+  config: { jsPoints: 10,
+            cssPoints: 8, 
+            fontFaceInCssPoints: 8,
+            inlineFontFacePoints: 1,
+            // SPOF types to check 
+            cssSpof: true,
+            jsSpof: true,
+            fontFaceInCssSpof: true,
+            inlineFontFaceSpof: true},
   url: 'http://sitespeed.io/rules/#spof',
 
   lint: function (doc, cset, config) {
@@ -465,9 +473,10 @@ YSLOW.registerRule({
   
     docDomainTLD = SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cset.doc_comp.url));
 
-    // Check for css loaded in head, from another domain (not subdomain)  
-    for (i = 0, len = css.length; i < len; i++) {
-      csscomp = css[i];
+    // Check for css loaded in head, from another domain (not subdomain) 
+    if (config.cssSpof) {   
+      for (i = 0, len = css.length; i < len; i++) {
+        csscomp = css[i];
             src = csscomp.href || csscomp.getAttribute('href');
 
             // Skip print stylesheets for now, since they "only" will make the onload sloooow
@@ -480,40 +489,41 @@ YSLOW.registerRule({
                insideHeadOffenders[src] = 1;
                }
             }
-        }
+      }
 	
-	for (var i = 0; i < csscomps.length; i++) {
+	   for (var i = 0; i < csscomps.length; i++) {
       if (insideHeadOffenders[csscomps[i].url]) {
         if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(csscomps[i].url))) {
           offenders.push(csscomps[i]);
           nrOfCss++;
+          }
         }
       }
     }
 
 	
     // Check for font-face in the external css files
-    for (var i = 0; i < csscomps.length; i++) {
-
-      matches = csscomps[i].body.match(pattern);
-      if(matches) {
-       matches.forEach(function(match) {
-	while(url = urlPattern.exec(match)) {
-		if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, csscomps[i].url, url[1])) 
-		{
-		// we have a match, a fontface user :)
-		offenders.push(url[1]);
-		nrOfFontFaceCssFiles++;
-		fontFaceInfo += ' The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
-	}
-        }
+    if (config.fontFaceInCssSpof) {
+      for (var i = 0; i < csscomps.length; i++) {
+        matches = csscomps[i].body.match(pattern);
+        if(matches) {
+          matches.forEach(function(match) {
+	         while(url = urlPattern.exec(match)) {
+		        if (!SITESPEEDHELP.isSameDomainTLD(docDomainTLD, csscomps[i].url, url[1])) {
+		          // we have a match, a fontface user :)
+		          offenders.push(url[1]);
+		          nrOfFontFaceCssFiles++;
+		          fontFaceInfo += ' The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
+	           }
+          } 
         });
       }
     }
+  }
   
 
     // Check for inline font-face 
-   
+   if (config.inlineFontFaceSpof) {
     matches = doc.documentElement.innerHTML.match(pattern);
 
     if (matches) {
@@ -528,9 +538,11 @@ YSLOW.registerRule({
       }
     });
     }
+  }
   
   
     // now the js
+    if (config.jsSpof) {
     for (i = 0, len = scripts.length; i < len; i++) {
       jscomp = scripts[i];
       if (jscomp.parentNode.tagName === 'HEAD') {
@@ -550,6 +562,7 @@ YSLOW.registerRule({
         }
       }
     }
+  }
 
 
     var message = offenders.length === 0  ? '' :
@@ -1226,7 +1239,8 @@ YSLOW.registerRuleset({
     rules: {
         criticalpath: {},
         // ttfb: {},
-        spof: {},
+        spof: { fontFaceInCssSpof: false,
+                inlineFontFaceSpof: false},
         cssnumreq: {},
         cssimagesnumreq: {},
         jsnumreq: {},
@@ -1313,7 +1327,8 @@ YSLOW.registerRuleset({
     rules: {
         criticalpath: {},
         // ttfb: {},
-        spof: {},
+        spof: { fontFaceInCssSpof: false,
+                inlineFontFaceSpof: false},
         cssnumreq: {},
         cssimagesnumreq: {},
         jsnumreq: {},
