@@ -454,7 +454,7 @@ YSLOW.registerRule({
             cssSpof: true,
             jsSpof: true,
             fontFaceInCssSpof: true,
-            inlineFontFaceSpof: true},
+            inlineFontFaceSpof: true },
   url: 'http://sitespeed.io/rules/#spof',
 
   lint: function (doc, cset, config) {
@@ -758,16 +758,13 @@ YSLOW.registerRule({
   url: 'http://sitespeed.io/rules/#textcontent',
 
   lint: function (doc, cset, config) {
-  
   var textLength = 0, score = 100, offenders = [], message, contentPercent;
-
   textLength = SITESPEEDHELP.getTextLength(doc);
   contentPercent = textLength/doc.body.innerHTML.length*100;
-  
   if (contentPercent.toFixed(0)<50) {
     score = contentPercent.toFixed(0)*2;
   }
-
+ 
   message = 'The amount of content percentage: ' + contentPercent.toFixed(config.decimals) + '%';
   offenders.push(contentPercent.toFixed(config.decimals));
 
