@@ -1231,8 +1231,8 @@ YSLOW.registerRule({
 
 
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-2.0-desktop',
-    name: 'Sitespeed.io desktop rules v2.0',
+    id: 'sitespeed.io-desktop',
+    name: 'Sitespeed.io desktop rules',
     rules: {
         criticalpath: {},
         // ttfb: {},
@@ -1319,8 +1319,8 @@ YSLOW.registerRuleset({
 });
 
 YSLOW.registerRuleset({ 
-    id: 'sitespeed.io-2.0-mobile',
-    name: 'Sitespeed.io mobile rules v2.0',
+    id: 'sitespeed.io-mobile',
+    name: 'Sitespeed.io mobile rules',
     rules: {
         criticalpath: {},
         // ttfb: {},
@@ -1400,6 +1400,83 @@ YSLOW.registerRuleset({
         longexpirehead: 5,
         nodnslookupswhenfewrequests: 15,
         inlinecsswhenfewrequest: 10,
+        textcontent: 1,
+        thirdpartyversions:5
+    }
+
+});
+
+
+YSLOW.registerRuleset({ 
+    id: 'sitespeed.io-desktop-http2.0',
+    name: 'Sitespeed.io desktop rules for HTTP 2.0',
+    rules: {
+        criticalpath: {},
+        // ttfb: {},
+        spof: { fontFaceInCssSpof: false,
+                inlineFontFaceSpof: false},
+        yemptysrc: {},
+        ycompress: {},
+        ycsstop: {},
+        yjsbottom: {},
+        yexpressions: {},
+        // yexternal: {},
+        ydns: {},
+        yminify: {},
+        redirects: {},
+        noduplicates: {},
+        yetags: {},
+        yxhr: {},
+        yxhrmethod: {},
+        mindom: {},
+        yno404: {},
+        ymincookie: {},
+        ycookiefree: {},
+        ynofilter: {},
+        avoidscalingimages: {},
+        yfavicon: {},
+        thirdpartyasyncjs: {},
+        cssprint: {},
+        cssinheaddomain: {},
+        syncjsinhead: {},
+        avoidfont: {},
+        expiresmod: {},
+        longexpirehead: {},
+        textcontent: {},
+        thirdpartyversions: {}
+    },
+    weights: {
+        criticalpath: 15,
+        // ttfb: 10,
+        // Low since we fetch all different domains, not only 3rd parties
+        spof: 5,
+        yemptysrc: 30,
+        ycompress: 8,
+        ycsstop: 4,
+        yjsbottom: 4,
+        yexpressions: 3,
+        // yexternal: 4,
+        ydns: 3,
+        yminify: 4,
+        redirects: 4,
+        noduplicates: 4,
+        yetags: 2,
+        yxhr: 4,
+        yxhrmethod: 3,
+        mindom: 3,
+        yno404: 4,
+        ymincookie: 3,
+        ycookiefree: 3,
+        ynofilter: 4,
+        avoidscalingimages: 5,
+        yfavicon: 2,
+        thirdpartyasyncjs: 10,
+        cssprint: 3,
+        cssinheaddomain: 8,
+        syncjsinhead: 20,
+        avoidfont: 1,
+        expiresmod: 10,
+        longexpirehead: 5,
         textcontent: 1,
         thirdpartyversions:5
     }
