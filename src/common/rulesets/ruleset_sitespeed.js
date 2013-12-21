@@ -1,8 +1,8 @@
 // Rule file for sitespeed.io
 
 var SITESPEEDHELP = {};
-  
-// Borrowed from https://github.com/pmeenan/spof-o-matic/blob/master/src/background.js  
+
+// Borrowed from https://github.com/pmeenan/spof-o-matic/blob/master/src/background.js
 // Determining the top-level-domain for a given host is way too complex to do right
 // (you need a full list of them basically)
 // We are going to simplify it and assume anything that is .co.xx will have 3 parts
@@ -23,20 +23,6 @@ SITESPEEDHELP.getTLD =  function (host){
 
 // end of borrow :)
 
-SITESPEEDHELP.getSynchronouslyJavascripts =  function (js){
-var syncJs = [];
-
-for (var i = 0; i < js.length; i++) {
-  if (js[i].src) {
-    if (!js[i].async && !js[i].defer) {
-    syncJs.push(js[i]);
-    }
-  }
-}
-
-return syncJs;
-};
-
 // Inspired by dom monster http://mir.aculo.us/dom-monster/
 SITESPEEDHELP.getTextLength = function (element) {
 
@@ -48,11 +34,11 @@ function getLength(element){
     for(var i=0;i<element.childNodes.length;i++)
       getLength(element.childNodes[i]);
     if(element.nodeType==3 && avoidTextInScriptAndStyle.indexOf(element.parentNode.tagName.toLowerCase())==-1)
-      textLength += element.nodeValue.length; 
+      textLength += element.nodeValue.length;
 }
 
 getLength(element);
-return textLength; 
+return textLength;
 };
 
 
@@ -86,11 +72,11 @@ if ((/^http/).test(fontFaceUrl)) {
 	 else return false;
 }
 
-// it is relative, check if the css is for the same domain as doc 
+// it is relative, check if the css is for the same domain as doc
  else if (docDomainTLD === SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cssUrl))) {
  return true;
  }
- 
+
 else return false;
 
 return false;
@@ -107,7 +93,7 @@ YSLOW.registerRule({
   category: ['css'],
   config: {points: 20},
   url: 'http://sitespeed.io/rules/#cssprint',
-  
+
   lint: function (doc, cset, config) {
   var i, media, score,url,
         offenders = [],
@@ -116,9 +102,9 @@ YSLOW.registerRule({
         links = doc.getElementsByTagName('link');
 
          for (i = 0, len = links.length; i < len; i += 1) {
-  
+
           if (links[i].media === 'print') {
-            url = links[i].href;           
+            url = links[i].href;
             hash[url] = 1;
           }
         }
@@ -129,7 +115,7 @@ YSLOW.registerRule({
       }
     }
       score = 100 - offenders.length * parseInt(config.points, 10);
-      
+
       return {
       score: score,
       message: (offenders.length > 0) ? YSLOW.util.plural(
@@ -141,7 +127,7 @@ YSLOW.registerRule({
 
 
    }
-});  
+});
 
 YSLOW.registerRule({
   id: 'ttfb',
@@ -150,7 +136,7 @@ YSLOW.registerRule({
   category: ['server'],
   config: {points: 10, limitInMs: 300, hurtEveryMs: 100},
   url: 'http://sitespeed.io/rules/#ttfb',
-  
+
   lint: function (doc, cset, config) {
   var i, limit = parseInt(config.limitInMs, 10), hurtEveryMs = parseInt(config.hurtEveryMs, 10), score, ttfb, comps = cset.getComponentsByType('doc');
 
@@ -158,11 +144,11 @@ YSLOW.registerRule({
           ttfb = comps[i].ttfb;
           if (ttfb > limit) {
             // The limit is limit, for every hurtEveryMs, remove X points
-            score = 100 - (Math.ceil((ttfb - limit)/hurtEveryMs) 
+            score = 100 - (Math.ceil((ttfb - limit)/hurtEveryMs)
                  * parseInt(config.points, 10));
           }
       }
-  
+
     if (score<0)
         score=0;
 
@@ -174,7 +160,7 @@ YSLOW.registerRule({
     };
 
    }
-});  
+});
 
 
 YSLOW.registerRule({
@@ -186,13 +172,13 @@ YSLOW.registerRule({
   url: 'http://sitespeed.io/rules/#cssinheaddomain',
 
   lint: function (doc, cset, config) {
- 
-  var css = doc.getElementsByTagName('link'), 
+
+  var css = doc.getElementsByTagName('link'),
     comps = cset.getComponentsByType('css'),
-    comp, docdomain, src, offenders = {}, 
-    offendercomponents = [], uniquedns = [], 
+    comp, docdomain, src, offenders = {},
+    offendercomponents = [], uniquedns = [],
     score = 100;
-  
+
     docdomain = YSLOW.util.getHostname(cset.doc_comp.url);
 
     for (i = 0, len = css.length; i < len; i++) {
@@ -219,9 +205,9 @@ YSLOW.registerRule({
     var message = offendercomponents.length === 0 ? '' :
       'The following ' + YSLOW.util.plural('%num% css', offendercomponents.length) +
         ' are loaded from a different domain inside head, causing DNS lookups before page is rendered. Unique DNS in head that decreases the score:' + uniquedns.length + ".";
-    // only punish dns lookups    
+    // only punish dns lookups
     score -= uniquedns.length * parseInt(config.points, 10);
-  
+
     return {
       score: score,
       message: message,
@@ -231,8 +217,8 @@ YSLOW.registerRule({
 });
 
 
-/** Alternative to yjsbottom rule that doesn't seems to work right now 
-with phantomjs 
+/** Alternative to yjsbottom rule that doesn't seems to work right now
+with phantomjs
 */
 YSLOW.registerRule({
   id: 'syncjsinhead',
@@ -244,12 +230,12 @@ YSLOW.registerRule({
   url: 'http://sitespeed.io/rules/#syncjsinhead',
 
   lint: function (doc, cset, config) {
-    var scripts = doc.getElementsByTagName('script'), 
+    var scripts = doc.getElementsByTagName('script'),
     comps = cset.getComponentsByType('js'),
-    comp, offenders = {}, 
-    offender_comps = [],  
+    comp, offenders = {},
+    offender_comps = [],
     score = 100;
-  
+
     for (i = 0, len = scripts.length; i < len; i++) {
       comp = scripts[i];
       if (comp.parentNode.tagName === 'HEAD') {
@@ -271,7 +257,7 @@ YSLOW.registerRule({
       'There are ' + YSLOW.util.plural('%num% script%s%', offender_comps.length) +
         ' that are not loaded asynchronously in head, that will block the rendering.';
     score -= offender_comps.length * parseInt(config.points, 10);
-  
+
     return {
       score: score,
       message: message,
@@ -297,7 +283,7 @@ YSLOW.registerRule({
 
     var message = comps.length === 0 ? '' :
       'There are ' + YSLOW.util.plural('%num% font%s%', comps.length) +
-        ' that will add extra overhead.';    
+        ' that will add extra overhead.';
 
     return {
       score: score,
@@ -331,13 +317,13 @@ YSLOW.registerRule({
 
     // calculate the score for javascripts
     // synchronous will hurt us most
-    // defer CAN hurt us and async will not 
+    // defer CAN hurt us and async will not
     // all inside of head of course
     for (i = 0, len = scripts.length; i < len; i++) {
       js = scripts[i];
       if (js.parentNode.tagName === 'HEAD') {
         if (js.src) {
-          if (js.async) 
+          if (js.async)
             continue;
           else if (js.defer) {
             offenders[js.src] = 1;
@@ -360,7 +346,7 @@ YSLOW.registerRule({
 
       // Skip print stylesheets for now, since they "only" will make the onload sloooow
       // maybe it's better to check for screen & all in the future?
-      if (comp.media === 'print') 
+      if (comp.media === 'print')
         continue;
 
       else if (src && (comp.rel === 'stylesheet' || comp.type === 'text/css')) {
@@ -378,13 +364,13 @@ YSLOW.registerRule({
       if (offenders[jsComponents[i].url]) {
         componentOffenders.push(jsComponents[i]);
       }
-    }  
+    }
 
       for (var i = 0; i < cssComponents.length; i++) {
       if (offenders[cssComponents[i].url]) {
         componentOffenders.push(cssComponents[i]);
       }
-    }  
+    }
 
     // hurt the ones that loads from another domain
     domains = YSLOW.util.getUniqueDomains(componentOffenders, true);
@@ -429,9 +415,9 @@ YSLOW.registerRule({
     if (score<0) score = 0;
 
     var message = score === 100 ? '' :
-      'The page uses ' + comps.length + 
-        ' requests, that is too many to make the page load fast.';    
-    var offenders = score === 100 ? '' : comps;    
+      'The page uses ' + comps.length +
+        ' requests, that is too many to make the page load fast.';
+    var offenders = score === 100 ? '' : comps;
 
     return {
       score: score,
@@ -447,10 +433,10 @@ YSLOW.registerRule({
   info: 'A page should not have a single point of failure a.k.a load content from a provider that can get the page to stop working.',
   category: ['misc'],
   config: { jsPoints: 10,
-            cssPoints: 8, 
+            cssPoints: 8,
             fontFaceInCssPoints: 8,
             inlineFontFacePoints: 1,
-            // SPOF types to check 
+            // SPOF types to check
             cssSpof: true,
             jsSpof: true,
             fontFaceInCssSpof: true,
@@ -459,29 +445,29 @@ YSLOW.registerRule({
 
   lint: function (doc, cset, config) {
 
-    var css = doc.getElementsByTagName('link'), 
-    scripts = doc.getElementsByTagName('script'), 
+    var css = doc.getElementsByTagName('link'),
+    scripts = doc.getElementsByTagName('script'),
     csscomps = cset.getComponentsByType('css'),
     jscomps = cset.getComponentsByType('js'),
-    docDomainTLD, src, url, matches, offenders = [], insideHeadOffenders = [], 
+    docDomainTLD, src, url, matches, offenders = [], insideHeadOffenders = [],
     nrOfInlineFontFace = 0, nrOfFontFaceCssFiles = 0, nrOfJs = 0, nrOfCss = 0,
     // RegEx pattern for retrieving all the font-face styles, borrowed from https://github.com/senthilp/spofcheck/blob/master/lib/rules.js
-    pattern = /@font-face[\s\n]*{([^{}]*)}/gim, 
+    pattern = /@font-face[\s\n]*{([^{}]*)}/gim,
     urlPattern = /url\s*\(\s*['"]?([^'"]*)['"]?\s*\)/gim,
     fontFaceInfo = '',
     score = 100;
-  
+
     docDomainTLD = SITESPEEDHELP.getTLD(YSLOW.util.getHostname(cset.doc_comp.url));
 
-    // Check for css loaded in head, from another domain (not subdomain) 
-    if (config.cssSpof) {   
+    // Check for css loaded in head, from another domain (not subdomain)
+    if (config.cssSpof) {
       for (i = 0, len = css.length; i < len; i++) {
         csscomp = css[i];
             src = csscomp.href || csscomp.getAttribute('href');
 
             // Skip print stylesheets for now, since they "only" will make the onload sloooow
             // maybe it's better to check for screen & all in the future?
-            if (csscomp.media === 'print') 
+            if (csscomp.media === 'print')
               continue;
 
             if (src && (csscomp.rel === 'stylesheet' || csscomp.type === 'text/css')) {
@@ -490,7 +476,7 @@ YSLOW.registerRule({
                }
             }
       }
-	
+
 	   for (var i = 0; i < csscomps.length; i++) {
       if (insideHeadOffenders[csscomps[i].url]) {
         if (docDomainTLD !== SITESPEEDHELP.getTLD(YSLOW.util.getHostname(csscomps[i].url))) {
@@ -501,7 +487,7 @@ YSLOW.registerRule({
       }
     }
 
-	
+
     // Check for font-face in the external css files
     if (config.fontFaceInCssSpof) {
       for (var i = 0; i < csscomps.length; i++) {
@@ -515,14 +501,14 @@ YSLOW.registerRule({
 		          nrOfFontFaceCssFiles++;
 		          fontFaceInfo += ' The font file:' + url[1] + ' is loaded from ' + csscomps[i].url;
 	           }
-          } 
+          }
         });
       }
     }
   }
-  
 
-    // Check for inline font-face 
+
+    // Check for inline font-face
    if (config.inlineFontFaceSpof) {
     matches = doc.documentElement.innerHTML.match(pattern);
 
@@ -539,8 +525,8 @@ YSLOW.registerRule({
     });
     }
   }
-  
-  
+
+
     // now the js
     if (config.jsSpof) {
     for (i = 0, len = scripts.length; i < len; i++) {
@@ -569,7 +555,7 @@ YSLOW.registerRule({
       'There are possible of ' + YSLOW.util.plural('%num% assets', offenders.length) +
         ' that can cause a frontend single point of failure. ';
 
-    message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF. ';    
+    message += nrOfJs === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% javascript',nrOfJs) + ' loaded from another domain that can cause SPOF. ';
     message += nrOfCss === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% css ',nrOfCss) + ' loaded from another domain that can cause SPOF. ';
     message += nrOfFontFaceCssFiles === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num%',nrOfFontFaceCssFiles) + ' font face in css files that can cause SPOF. ' + fontFaceInfo;
     message += nrOfInlineFontFace === 0 ? '' : 'There are ' +  YSLOW.util.plural('%num% ',nrOfInlineFontFace) + ' inline font face that can cause minor SPOF. ' + fontFaceInfo;
@@ -613,15 +599,15 @@ YSLOW.registerRule({
             expiration = comps[i].expires;
             if (typeof expiration === 'object' &&
                     typeof expiration.getTime === 'function') {
-                
-                // check if the server has set the date, if so 
-                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18 
+
+                // check if the server has set the date, if so
+                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
                 if (typeof comps[i].headers.date === 'undefined') {
-                	ts = new Date().getTime();                	
+                	ts = new Date().getTime();
                 }
                 else
                  ts = new Date(comps[i].headers.date).getTime();
-                
+
                 if (expiration.getTime() > ts) {
                     continue;
                 }
@@ -631,7 +617,7 @@ YSLOW.registerRule({
         }
 
         score = 100 - offenders.length * parseInt(config.points, 10);
-       
+
         message = (offenders.length > 0) ? YSLOW.util.plural(
                 'There %are% %num% static component%s%',
                 offenders.length
@@ -664,22 +650,22 @@ YSLOW.registerRule({
         var ts, i, expiration, score, len, message,
             offenders = [],
             skipped = [],
-            far = 31535000 * 1000, 
+            far = 31535000 * 1000,
             comps = cset.getComponentsByType(config.types);
 
         for (i = 0, len = comps.length; i < len; i += 1) {
             expiration = comps[i].expires;
             if (typeof expiration === 'object' &&
                     typeof expiration.getTime === 'function') {
-                
-                // check if the server has set the date, if so 
-                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18 
+
+                // check if the server has set the date, if so
+                // use that http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
                 if (typeof comps[i].headers.date === 'undefined') {
-                	ts = new Date().getTime();                	
+                	ts = new Date().getTime();
                 }
                 else
                  ts = new Date(comps[i].headers.date).getTime();
-              
+
                 if (expiration.getTime() > ts + far) {
                     continue;
                 }
@@ -689,14 +675,14 @@ YSLOW.registerRule({
                  skipped.push(comps[i].url);
                  continue;
                 }
-            
+
             }
 
               offenders.push(comps[i]);
         }
 
         score = 100 - offenders.length * parseInt(config.points, 10);
-       
+
         message = (offenders.length > 0) ? YSLOW.util.plural(
                 'There %are% %num% static component%s%',
                 offenders.length
@@ -724,16 +710,16 @@ YSLOW.registerRule({
   url: 'http://sitespeed.io/rules/#inlinecsswhenfewrequest',
 
   lint: function (doc, cset, config) {
-  
-  
+
+
   var comps = cset.getComponentsByType(config.types),
   css = cset.getComponentsByType('css'), message = '', score = 100, offenders = [];
 
   // If we have more requests than the set limit & we have css files, decrease the score
   if (comps.length < config.limit && css.length > 0) {
-  
+
     for (i = 0, len = css.length; i < len; i++) {
-      offenders.push(css[i].url); 
+      offenders.push(css[i].url);
     }
 
     message = 'The page have ' +  comps.length + ' requests and uses ' + css.length + ' css files. It is better to keep the css inline, when you have so few requests.';
@@ -764,7 +750,7 @@ YSLOW.registerRule({
   if (contentPercent.toFixed(0)<50) {
     score = contentPercent.toFixed(0)*2;
   }
- 
+
   message = 'The amount of content percentage: ' + contentPercent.toFixed(config.decimals) + '%';
   offenders.push(contentPercent.toFixed(config.decimals));
 
@@ -788,22 +774,33 @@ YSLOW.registerRule({
 
   lint: function (doc, cset, config) {
 
-  var domains, comps = cset.getComponentsByType(config.types),
-  score = 100, message = '', offenders = [];
-  syncJs = SITESPEEDHELP.getSynchronouslyJavascripts(cset.getComponentsByType('js'));
+  var domains, comp, comps = cset.getComponentsByType(config.types), jsComps = cset.getComponentsByType('js'),
+  score = 100, message = '', offenders = [],  jsSync = [], scripts = doc.getElementsByTagName('script');
 
-  // Add the js files that are loaded sync
-  for (i = 0, len = syncJs.length; i < len; i++) {
-    comps.push(syncJs[i]);
-  }
+  // fetch all js that aren't async
+    for (i = 0, len = scripts.length; i < len; i++) {
+      comp = scripts[i];
+        if (comp.src) {
+          if (!comp.async && !comp.defer) {
+            jsSync[comp.src] = 1;
+          }
+      }
+    }
+
+    // and add the components
+    for (var i = 0; i < jsComps.length; i++) {
+      if (jsSync[jsComps[i].url]) {
+        comps.push(jsComps[i]);
+      }
+    }
 
   domains = YSLOW.util.getUniqueDomains(comps);
 
-  // Only activate if the number of components are less than the limit 
+  // Only activate if the number of components are less than the limit
   // and we have more than one domain
   if (comps.length < config.limit && domains.length > 1) {
     for (i = 0, len = comps.length; i < len; i++) {
-      offenders.push(comps[i].url); 
+      offenders.push(comps[i].url);
     }
     message = 'Too many domains (' + domains.length + ') used for a page with only ' + comps.length + ' requests (async javascripts not included)';
     score -= offenders.length * parseInt(config.points, 10);
@@ -824,7 +821,7 @@ https://github.com/stoyan/yslow
 
 var YSLOW3PO = {};
 YSLOW3PO.is3p = function (url) {
-  
+
   var patterns = [
     'ajax.googleapis.com',
     'apis.google.com',
@@ -839,8 +836,8 @@ YSLOW3PO.is3p = function (url) {
     '.addthis.com',
     'code.jquery.com',
     'ad.doubleclick.net',
-    '.lognormal.com', 
-    'embed.spotify.com'    
+    '.lognormal.com',
+    'embed.spotify.com'
   ];
   var hostname = YSLOW.util.getHostname(url);
   var re;
@@ -864,12 +861,12 @@ YSLOW.registerRule({
   url: 'http://www.phpied.com/3PO#async',
 
   lint: function (doc, cset, config) {
-    var scripts = doc.getElementsByTagName('script'), 
+    var scripts = doc.getElementsByTagName('script'),
     comps = cset.getComponentsByType('js'),
-    comp, offenders = {}, 
-    offender_comps = [], 
+    comp, offenders = {},
+    offender_comps = [],
     score = 100;
-    
+
     // find offenders
     for (i = 0, len = scripts.length; i < len; i++) {
       comp = scripts[i];
@@ -924,9 +921,9 @@ YSLOW.registerRule({
 
             for (var i = 0; i < css.length; i++) {
               offenders.push(css[i].url);
-            }              
+            }
         }
-        
+
         return {
             score: score,
             message: message,
@@ -946,16 +943,16 @@ YSLOW.registerRule({
 
     lint: function (doc, cset, config) {
             var cssimages = cset.getComponentsByType('cssimage'),
-            score = 100, offenders = [], 
+            score = 100, offenders = [],
             message = '';
 
         if (cssimages.length > config.max_cssimages) {
             score -= (cssimages.length  -config.max_cssimages) * config.points_cssimages;
             message = 'This page has ' + YSLOW.util.plural('%num% external css image%s%', cssimages.length) + '. Try combining them into fewer request.';
-            
+
             for (var i = 0; i < cssimages.length; i++) {
               offenders.push(cssimages[i].url);
-            }    
+            }
         }
         return {
             score: score,
@@ -975,12 +972,12 @@ YSLOW.registerRule({
   url: 'http://sitespeed.io/rules/#jsnumreq',
 
   lint: function (doc, cset, config) {
-    var scripts = doc.getElementsByTagName('script'), 
+    var scripts = doc.getElementsByTagName('script'),
     comps = cset.getComponentsByType('js'),
-    comp, offenders = {}, 
-    offender_comps = [], message = '', 
+    comp, offenders = {},
+    offender_comps = [], message = '',
     score = 100;
-  
+
     // fetch all js that aren't async
     for (i = 0, len = scripts.length; i < len; i++) {
       comp = scripts[i];
@@ -998,12 +995,12 @@ YSLOW.registerRule({
     }
 
 
-    if (offender_comps.length > config.max_js) { 
+    if (offender_comps.length > config.max_js) {
     message = 'There ' + YSLOW.util.plural('%are% %num% script%s%', offender_comps.length) +
         ' loaded synchronously that could be combined into fewer requests.';
     score -= (offender_comps.length - config.max_js) * parseInt(config.points_js, 10);
     }
-  
+
     return {
       score: score,
       message: message,
@@ -1022,7 +1019,7 @@ YSLOW.registerRule({
   category: ['js','css'],
   config: {},
   url: 'http://developer.yahoo.com/performance/rules.html#js_dupes',
-  
+
 
   lint: function (doc, cset, config) {
     var i, url, score, len, comp,
@@ -1077,7 +1074,7 @@ YSLOW.registerRule({
   }
 });
 
-// the same rule as ymindom except that it reports the nr of doms 
+// the same rule as ymindom except that it reports the nr of doms
 YSLOW.registerRule({
     id: 'mindom',
     name: 'Reduce the number of DOM elements',
@@ -1120,7 +1117,7 @@ YSLOW.registerRule({
     info: 'Unisng the latest versions, will make sure you have the fastest and hopefully leanest javascripts.',
     url: 'http://sitespeed.io/rules/#thirdpartyversions',
     category: ['js'],
-    config: { 
+    config: {
 	   // points to take out for each js that is old
         points: 10
         },
@@ -1132,7 +1129,7 @@ YSLOW.registerRule({
 	if(typeof jQuery == 'function'){
 		if(SITESPEEDHELP.versionCompare(jQuery.fn.jquery, [2, 0, 0])) {
         	message = "You are using an old version of JQuery: "+ jQuery.fn.jquery + " Newer version is faster & better. Upgrade to the newest version from http://jquery.com/" ;
-      		offenders += 1; 	
+      		offenders += 1;
       }
 	}
 
@@ -1153,7 +1150,7 @@ YSLOW.registerRule({
     info: 'Always use the correct size for images to avoid that a browser download an image that is larger than necessary.',
     url: 'http://sitespeed.io/rules/#avoidscalingimages',
     category: ['images'],
-    config: { 
+    config: {
         // if an image is more than X px in width, punish the page harder
         reallyBadLimit: 100
         },
@@ -1164,15 +1161,15 @@ YSLOW.registerRule({
         hash = {}, punish = 0,
         comps = cset.getComponentsByType('image'),
         images = doc.getElementsByTagName('img');
-        
+
         // go through all images
         for(var i = 0; i < images.length; i++){
           var img = images[i];
-          // skip images that are 0 (carousell etc) 
+          // skip images that are 0 (carousell etc)
           if (img.clientWidth  < img.naturalWidth && img.clientWidth > 0) {
-            message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';       
+            message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';
             hash[img.src] = 1;
-            
+
             // punish hard if the reallyBadLimitExceeds
             if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth)
               punish++;
@@ -1184,7 +1181,7 @@ YSLOW.registerRule({
             offenders.push(comps[i]);
           }
         }
-    
+
         score = 100 - ((offenders.length-punish) * 2) - (punish*10);
         return {
           score: score,
@@ -1196,7 +1193,7 @@ YSLOW.registerRule({
 
 
 /**
-** This is a hack for sitespeed.io 2.0. The original YSLow rule doesn't work for PhantomJS 
+** This is a hack for sitespeed.io 2.0. The original YSLow rule doesn't work for PhantomJS
 ** see why https://github.com/soulgalore/sitespeed.io/issues/243
 */
 YSLOW.registerRule({
@@ -1212,7 +1209,7 @@ YSLOW.registerRule({
 
     lint: function (doc, cset, config) {
         var score;
-       
+
         score = 100 - cset.redirects.length * parseInt(config.points, 10);
 
         return {
@@ -1230,7 +1227,7 @@ YSLOW.registerRule({
 /* End */
 
 
-YSLOW.registerRuleset({ 
+YSLOW.registerRuleset({
     id: 'sitespeed.io-desktop',
     name: 'Sitespeed.io desktop rules',
     rules: {
@@ -1318,7 +1315,7 @@ YSLOW.registerRuleset({
 
 });
 
-YSLOW.registerRuleset({ 
+YSLOW.registerRuleset({
     id: 'sitespeed.io-mobile',
     name: 'Sitespeed.io mobile rules',
     rules: {
@@ -1407,7 +1404,7 @@ YSLOW.registerRuleset({
 });
 
 
-YSLOW.registerRuleset({ 
+YSLOW.registerRuleset({
     id: 'sitespeed.io-desktop-http2.0',
     name: 'Sitespeed.io desktop rules for HTTP 2.0',
     rules: {
