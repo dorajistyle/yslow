@@ -66,10 +66,10 @@ SITESPEEDHELP.isSameDomainTLD = function (docDomainTLD, cssUrl, fontFaceUrl) {
 // first check the font-face url, is it absolute or relative
 if ((/^http/).test(fontFaceUrl)) {
 	// it is absolute ...
-	 if (docDomainTLD === SITESPEEDHELP.getTLD(YSLOW.util.getHostname(fontFaceUrl))) {
-	 return true;
-	 }
-	 else return false;
+    if (docDomainTLD === SITESPEEDHELP.getTLD(YSLOW.util.getHostname(fontFaceUrl))) {
+      return true;
+    }
+    else return false;
 }
 
 // it is relative, check if the css is for the same domain as doc
@@ -109,7 +109,7 @@ YSLOW.registerRule({
           }
         }
 
-     for (var i = 0; i < comps.length; i++) {
+for (var i = 0; i < comps.length; i++) {
       if (hash[comps[i].url]) {
         offenders.push(comps[i]);
       }
