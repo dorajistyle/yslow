@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2012, Yahoo! Inc.  All rights reserved.
+ * Copyright (c) 2013, Marcel Duran and other contributors. All rights reserved.
  * Copyrights licensed under the New BSD License. See the accompanying LICENSE file for terms.
  */
 
@@ -12,109 +13,7 @@
  * later evaluated into the page in order to run YSlow.
  */
 
-// For using yslow in phantomjs, see instructions @ https://github.com/marcelduran/yslow/wiki/PhantomJS
-
-
-// FROM netsniff.js borrowed from PhantomJS
-// https://github.com/ariya/phantomjs/blob/master/examples/netsniff.js
-if (!Date.prototype.toISOString) {
-    Date.prototype.toISOString = function () {
-        function pad(n) { return n < 10 ? '0' + n : n; }
-        function ms(n) { return n < 10 ? '00'+ n : n < 100 ? '0' + n : n }
-        return this.getFullYear() + '-' +
-            pad(this.getMonth() + 1) + '-' +
-            pad(this.getDate()) + 'T' +
-            pad(this.getHours()) + ':' +
-            pad(this.getMinutes()) + ':' +
-            pad(this.getSeconds()) + '.' +
-            ms(this.getMilliseconds()) + 'Z';
-    }
-}
-
-function createHAR(address, title, startTime, resources, loadTime)
-{
-    var entries = [];
-
-    resources.forEach(function (resource) {
-        var request = resource.request,
-            startReply = resource.startReply,
-            endReply = resource.endReply;
-
-        if (!request || !startReply || !endReply) {
-            return;
-        }
-
-        // Exclude Data URI from HAR file because
-        // they aren't included in specification
-        if (request.url.match(/(^data:image\/.*)/i)) {
-            return;
-    }
-
-        entries.push({
-            startedDateTime: request.time.toISOString(),
-            time: endReply.time - request.time,
-            request: {
-                method: request.method,
-                url: request.url,
-                httpVersion: "HTTP/1.1",
-                cookies: [],
-                headers: request.headers,
-                queryString: [],
-                headersSize: -1,
-                bodySize: -1
-            },
-            response: {
-                status: endReply.status,
-                statusText: endReply.statusText,
-                httpVersion: "HTTP/1.1",
-                cookies: [],
-                headers: endReply.headers,
-                redirectURL: "",
-                headersSize: -1,
-                bodySize: startReply.bodySize,
-                content: {
-                    size: startReply.bodySize,
-                    mimeType: endReply.contentType
-                }
-            },
-            cache: {},
-            timings: {
-                blocked: 0,
-                dns: -1,
-                connect: -1,
-                send: 0,
-                wait: startReply.time - request.time,
-                receive: endReply.time - startReply.time,
-                ssl: -1
-            },
-            pageref: address
-        });
-    });
-
-    return {
-        log: {
-            version: '1.2',
-            creator: {
-                name: "PhantomJS",
-                version: phantom.version.major + '.' + phantom.version.minor +
-                    '.' + phantom.version.patch
-            },
-            pages: [{
-                startedDateTime: startTime.toISOString(),
-                id: address,
-                title: title,
-                pageTimings: {
-                    onLoad: loadTime
-                }
-            }],
-            entries: entries
-        }
-    };
-}
-
-
-// END from netsniff.js
-
+// For using yslow in phantomjs, see instructions @ http://yslow.org/phantomjs/
 
 // parse args
 var i, arg, page, urlCount, viewport,
@@ -132,7 +31,8 @@ var i, arg, page, urlCount, viewport,
         headers: false,
         console: 0,
         threshold: 80,
-        harfilename: ''
+        cdns: '',
+        basicauth: ''
     },
     unaryArgs = {
         help: false,
@@ -154,7 +54,7 @@ var i, arg, page, urlCount, viewport,
         v: 'verbose',
         t: 'threshold',
         ch: 'headers',
-        n: 'harfilename'
+        ba: 'basicauth'
     };
 
 // loop args
@@ -218,13 +118,14 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -vp, --viewport <WxH>    specify page viewport size WxY, where W = width and H = height [400x300]',
         '    -ch, --headers <JSON>    specify custom request headers, e.g.: -ch \'{"Cookie": "foo=bar"}\'',
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
-        '    -n, --harfilename <filename>    the name of the HAR file, if no name is supplied, no HAR is created',
+        '    --cdns "<list>"          specify comma separated list of additional CDNs',
+        '    -ba, --basicauth "<username:password>"          username & password used for basic auth',
         '',
         '  Examples:',
         '',
         '    phantomjs ' + phantom.scriptName + ' http://yslow.org',
         '    phantomjs ' + phantom.scriptName + ' -i grade -f xml www.yahoo.com www.cnn.com www.nytimes.com',
-        '    phantomjs ' + phantom.scriptName + ' -info all --format plain --ua "MSIE 9.0" http://yslow.org',
+        '    phantomjs ' + phantom.scriptName + ' --info all --format plain --ua "MSIE 9.0" http://yslow.org',
         '    phantomjs ' + phantom.scriptName + ' -i basic --rulseset yslow1 -d http://yslow.org',
         '    phantomjs ' + phantom.scriptName + ' -i grade -b http://www.showslow.com/beacon/yslow/ -v yslow.org',
         '    phantomjs --load-plugins=yes ' + phantom.scriptName + ' -vp 800x600 http://www.yahoo.com',
@@ -242,69 +143,47 @@ yslowArgs.verbose = unaryArgs.verbose;
 urls.forEach(function (url) {
     var page = webpage.create();
 
-    page.resources = {};
-    page.harresources = [];
-    page.address = url;
-    // this is a hack for sitespeed.io 2.0 for solving the 
-    // redirect issue in YSLow. Hopefully a nicer 
-    page.redirects = [];
+      // set user agent string
+    if (yslowArgs.basicauth) {
+        auth = yslowArgs.basicauth.split(":");
+        page.settings.userName = auth[0];
+        page.settings.password = auth[1];
+    }
 
+    page.resources = {};
 
     // allow x-domain requests, used to retrieve components content
     page.settings.webSecurityEnabled = false;
 
-    page.onLoadStarted = function () {
-        page.startTime = new Date();
-    };
+    // this is a hack for sitespeed.io 2.0 for solving the
+    // redirect issue in YSLow.
+    page.redirects = [];
 
     // request
     page.onResourceRequested = function (req) {
         page.resources[req.url] = {
             request: req
         };
-
-        // used when getting TTFB
-        req['starttime'] = req.time.getTime();
-
-        // when getting the HAR
-        page.harresources[req.id] = {
-            request: req,
-            startReply: null,
-            endReply: null
-        };
-       
     };
 
     // response
     page.onResourceReceived = function (res) {
-        
-        // for HAR
-         if (res.stage === 'start') {
-            page.harresources[res.id].startReply = res;
-        }
-        if (res.stage === 'end') {
-            page.harresources[res.id].endReply = res;
-
-        if (res.status === 301 || res.status === 302) {
-                var locationValue;
-
-            for (var i = 0; i < res.headers.length; i++) {
-                if (res.headers[i].name==='Location')
-                    locationValue = res.headers[i].value;
-            }    
-           page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');        
-        }
-        }
-        
         var info,
             resp = page.resources[res.url].response;
 
+        //  hack for taking care of redirects
+         if (res.stage === 'end' )
+            if (res.status === 301 || res.status === 302) {
+                var locationValue;
+                for (var i = 0; i < res.headers.length; i++) {
+                    if (res.headers[i].name==='Location')
+                        locationValue = res.headers[i].value;
+                    }
+                    page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');
+            }
+
         if (!resp) {
             page.resources[res.url].response = res;
-            // when getting TTFB
-            if (res.stage === 'start') 
-                page.resources[res.url].response['starttime'] = res.time.getTime();
-
         } else {
             for (info in res) {
                 if (res.hasOwnProperty(info)) {
@@ -312,7 +191,6 @@ urls.forEach(function (url) {
                 }
             }
         }
-
     };
 
     // enable console output, useful for debugging
@@ -374,7 +252,9 @@ urls.forEach(function (url) {
     // open page
     page.startTime = new Date();
     page.open(url, function (status) {
-        var yslow, ysphantomjs, controller, evalFunc, loadTime, url, resp,
+        var yslow, ysphantomjs, controller, evalFunc,
+            loadTime, url, resp, output,
+            exitStatus = 0,
             startTime = page.startTime,
             resources = page.resources;
 
@@ -384,21 +264,7 @@ urls.forEach(function (url) {
             // page load time
             loadTime = new Date() - startTime;
 
-            // generate HAR 
-            
-            page.title = page.evaluate(function () {
-                return document.title;
-            });
-            har = createHAR(page.address, page.title, page.startTime, page.harresources, loadTime);
-           
-            var fs = require('fs');
-            if (yslowArgs.harfilename.length>0) {
-                if (!fs.exists(yslowArgs.harfilename))
-                    fs.write(yslowArgs.harfilename,JSON.stringify(har, undefined, 4),'w');
-            }
-            // end generate har
-
-             // set resources response time
+            // set resources response time
             for (url in resources) {
                 if (resources.hasOwnProperty(url)) {
                     resp = resources[url].response;
@@ -419,9 +285,8 @@ urls.forEach(function (url) {
                 'resources: ' + JSON.stringify(resources) + ',' +
                 'args: ' + JSON.stringify(yslowArgs) + ',' +
                 'loadTime: ' + JSON.stringify(loadTime) + ',' +
-                'redirects: ' + JSON.stringify(page.redirects) 
+                'redirects: ' + JSON.stringify(page.redirects)
                 + '};';
-	    
 
             // YSlow phantomjs controller
             controller = function () {
@@ -439,11 +304,12 @@ urls.forEach(function (url) {
                             resources = ysphantomjs.resources,
                             args = ysphantomjs.args,
                             ysutil = ys.util,
-
+                            preferences,
 
                             // format out with appropriate content type
                             formatOutput = function (content) {
-                                var format = (args.format || '').toLowerCase(),
+                                var testResults,
+                                    format = (args.format || '').toLowerCase(),
                                     harness = {
                                         'tap': {
                                             func: ysutil.formatAsTAP,
@@ -476,14 +342,16 @@ urls.forEach(function (url) {
                                     } catch (err) {
                                         threshold = args.threshold;
                                     }
+                                    testResults = harness[format].func(
+                                        ysutil.testResults(
+                                            content,
+                                            threshold
+                                        )
+                                    );
                                     return {
-                                        content: harness[format].func(
-                                            ysutil.testResults(
-                                                content,
-                                                threshold
-                                            )
-                                        ),
-                                        contentType: harness[format].contentType
+                                        content: testResults.content,
+                                        contentType: harness[format].contentType,
+                                        failures: testResults.failures
                                     };
                                 default:
                                     return {
@@ -512,73 +380,78 @@ urls.forEach(function (url) {
                                 return header;
                             };
 
-	                comps.forEach(function (comp) {
-                    var res = resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
-                
-                    // if the component hasn't been fetched by phantomjs but discovered by yslow
-                    if (res.response === undefined) {
-                        try {
-                            var headerName, h, i, len, m, startTime, endTime,
-                            reHeader = /^([^:]+):\s*([\s\S]+)$/,
-                            headers, response = new Object(), request = new Object();
+                        comps.forEach(function (comp) {
+                            var res = resources[comp.href] ||
+                                resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
 
-                            // fetch the asset
-                            xhr = new XMLHttpRequest();
-                            startTime = new Date().getTime();
-                            xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
-                            xhr.send();
-                            endTime = new Date().getTime();
-                            headers = xhr.getAllResponseHeaders();
-                            h = headers.split('\n');
+                            // if the component hasn't been fetched by phantomjs but discovered by yslow
+                            if (res.response === undefined) {
+                                try {
+                                    var headerName, h, i, len, m, startTime, endTime, headers,
+                                        reHeader = /^([^:]+):\s*([\s\S]+)$/,
+                                        response = {},
+                                        request = {};
 
-                            // fake the request
-                            request.headers = [];
-                            request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
-                            request.method = "GET";
-                            request.time="2013-05-22T20:40:33.381Z";
+                                    // fetch the asset
+                                    xhr = new XMLHttpRequest();
+                                    startTime = new Date().getTime();
+                                    xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
+                                    xhr.send();
+                                    endTime = new Date().getTime();
+                                    headers = xhr.getAllResponseHeaders();
+                                    h = headers.split('\n');
 
-                            // setup the response
-                            // real values will be added to the component
-                            // from the header
-                            response.bodySize = "-1";
-                            response.contentType = "";
-                            response.headers = [];
-                            response.id = "-1";
-                            response.redirectURL = null;
-                            response.stage = "end";
-                            response.status = xhr.status;
-                            response.time = endTime - startTime;
-                            response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+                                    // fake the request
+                                    request.headers = [];
+                                    request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+                                    request.method = 'GET';
+                                    request.time = '2013-05-22T20:40:33.381Z';
 
-                            // get the headers
-                            h = headers.split('\n');
-                            for (i = 0, len = h.length; i < len; i += 1) {
-                                m = reHeader.exec(h[i]);
-                                if (m) {
-                                    response.headers.push({"name":m[1], "value":m[2]});
+                                    // setup the response
+                                    // real values will be added to the component
+                                    // from the header
+                                    response.bodySize = '-1';
+                                    response.contentType = '';
+                                    response.headers = [];
+                                    response.id = '-1';
+                                    response.redirectURL = null;
+                                    response.stage = 'end';
+                                    response.status = xhr.status;
+                                    response.time = endTime - startTime;
+                                    response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+
+                                    // get the headers
+                                    h = headers.split('\n');
+                                    for (i = 0, len = h.length; i < len; i += 1) {
+                                        m = reHeader.exec(h[i]);
+                                        if (m) {
+                                            response.headers.push({'name': m[1], 'value': m[2]});
+                                        }
+                                    }
+
+                                    res.response = response;
+                                    res.request = request;
+
+                                } catch (err) {
+                                    console.log(err);
                                 }
                             }
-                                
-                            res.response = response;
-                            res.request = request;
-                        
-                            } catch (err) {
-                                console.log(err);
-                            }
-                        }   
-                           
-                        cset.addComponent(
-                             comp.href,
-                             comp.type,
-                             comp.base || baseHref,
-                             {
-                                 obj: comp.obj,
-                                 request: res.request,
-                                 response: res.response
-                             }
+
+                            cset.addComponent(
+                                comp.href,
+                                comp.type,
+                                comp.base || baseHref,
+                                {
+                                    obj: comp.obj,
+                                    request: res.request,
+                                    response: res.response
+                                }
                             );
                         });
 
+                        preferences = new Preferences();
+                        preferences.setPref('cdnHostnames', args.cdns);
+                        ysutil.Preference.registerNative(preferences);
 
                         // refinement
                         cset.inline = ysutil.getInlineTags(doc);
@@ -586,7 +459,7 @@ urls.forEach(function (url) {
                         cset.cookies = cset.doc_comp.cookie;
                         cset.components = ysutil.setInjected(doc,
                             cset.components, cset.doc_comp.body);
-                       
+
                         // hack for sitespeed.io 2.0
                         cset.redirects = ysphantomjs.redirects;
 
@@ -638,10 +511,33 @@ urls.forEach(function (url) {
                             }
                         }
 
-                        return output.content;
+                        return output;
                     } catch (err) {
                         return err;
                     }
+                };
+
+                // Implement a bare minimum preferences object to be able to use custom CDN URLs
+                function Preferences() {
+                    this.prefs = {};
+                }
+                Preferences.prototype.getPref = function (name, defaultValue) {
+                    return this.prefs.hasOwnProperty(name) ? this.prefs[name] : defaultValue;
+                };
+                Preferences.prototype.setPref = function (name, value) {
+                    this.prefs[name] = value;
+                };
+                Preferences.prototype.deletePref = function (name) {
+                    delete this.prefs[name];
+                };
+                Preferences.prototype.getPrefList = function (branch_name, default_value) {
+                    var values = [], key;
+                    for (key in this.prefs) {
+                        if (this.prefs.hasOwnProperty(key) && key.indexOf(branch_name) === 0) {
+                            values.push({ 'name': key, 'value': this.prefs[key] });
+                        }
+                    }
+                    return values.length === 0 ? default_value : values;
                 };
 
                 return YSLOW.phantomjs.run();
@@ -660,13 +556,15 @@ urls.forEach(function (url) {
             evalFunc = new Function(yslow + ysphantomjs + controller);
 
             // evaluate script and log results
-            console.log(page.evaluate(evalFunc));
+            output = page.evaluate(evalFunc);
+            exitStatus += output.failures || 0;
+            console.log(output.content);
         }
 
         // finish phantomjs
         urlCount -= 1;
         if (urlCount === 0) {
-            phantom.exit();
+            phantom.exit(exitStatus);
         }
     });
 });
