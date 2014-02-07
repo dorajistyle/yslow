@@ -1,6 +1,5 @@
 .svn/
 _site/
-build/
 pkg/
 *.swp
 .DS_Store
