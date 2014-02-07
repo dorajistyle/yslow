@@ -1269,7 +1269,9 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
+
     },
     weights: {
         criticalpath: 15,
@@ -1310,7 +1312,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6,
     }
 
 });
@@ -1357,7 +1360,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
     },
     weights: {
         criticalpath: 20,
@@ -1398,7 +1402,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests: 15,
         inlinecsswhenfewrequest: 10,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6,
     }
 
 });
@@ -1440,7 +1445,8 @@ YSLOW.registerRuleset({
         expiresmod: {},
         longexpirehead: {},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
     },
     weights: {
         criticalpath: 15,
@@ -1475,7 +1481,8 @@ YSLOW.registerRuleset({
         expiresmod: 10,
         longexpirehead: 5,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6,
     }
 
 });
