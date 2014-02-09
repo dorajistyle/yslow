@@ -17,9 +17,9 @@
 
 // variables for loading Restful web application completely.
 var resourceWait = 1e3,
-    maxRenderWait = 2e4,
+    maxRenderWait = 1e4,
     count = 0,
-    forcedRenderTimeout, renderTimeout;
+    renderTimeout;
 
 // parse args
 var i, arg, page, urlCount, viewport,
@@ -509,10 +509,7 @@ urls.forEach(function (url) {
                     page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');
             }
  	    count -= 1;
-            if (count === 0) {
-                renderTimeout = setTimeout(doRender, resourceWait)
-            }
-
+            if (count === 0) renderTimeout = setTimeout(doRender, resourceWait);
 	}
         if (!resp) {
             page.resources[res.url].response = res;
@@ -589,7 +586,7 @@ urls.forEach(function (url) {
             console.log('FAIL to load ' + url);
 	    finishPhantomJS(0);
         } else {
-	    forcedRenderTimeout = setTimeout(function () {
+	    setTimeout(function () {
                 doRender()
             }, maxRenderWait);
         }
