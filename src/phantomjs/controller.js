@@ -38,7 +38,8 @@ var i, arg, page, urlCount, viewport,
         console: 0,
         threshold: 80,
         cdns: '',
-        basicauth: ''
+        basicauth: '',
+        cookie: undefined
     },
     unaryArgs = {
         help: false,
@@ -60,7 +61,8 @@ var i, arg, page, urlCount, viewport,
         v: 'verbose',
         t: 'threshold',
         ch: 'headers',
-        ba: 'basicauth'
+        ba: 'basicauth',
+        C: 'cookie'
     };
 
 // loop args
@@ -124,6 +126,7 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -vp, --viewport <WxH>    specify page viewport size WxY, where W = width and H = height [400x300]',
         '    -ch, --headers <JSON>    specify custom request headers, e.g.: -ch \'{"Cookie": "foo=bar"}\'',
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
+        '    -C, --cookie <cookie>    specify an cookie for phantomjs ex) \'{"name":"cookie_name","value":"cookie_value","domain":"localhost"}\'',
         '    --cdns "<list>"          specify comma separated list of additional CDNs',
         '    -ba, --basicauth "<username:password>"          username & password used for basic auth',
         '',
@@ -145,6 +148,16 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
 yslowArgs.dict = unaryArgs.dict;
 yslowArgs.verbose = unaryArgs.verbose;
 
+// add a cookie to phantomjs
+try{
+      cookie = JSON.parse(yslowArgs.cookie,function(k, v){
+        return v;
+      });
+} catch (e) {
+      console.log('Error - '+ e);
+      cookie = undefined;
+}
+if(cookie != undefined) phantom.addCookie(cookie);
 
 // loop through urls
 urls.forEach(function (url) {
