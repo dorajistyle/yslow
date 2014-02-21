@@ -154,7 +154,6 @@ try{
         return v;
       });
 } catch (e) {
-      console.log('Error - '+ e);
       cookie = undefined;
 }
 if(cookie != undefined) phantom.addCookie(cookie);
@@ -594,7 +593,7 @@ urls.forEach(function (url) {
     // open page
     page.startTime = new Date();
     page.open(url, function (status) {
-       
+
         if (status !== 'success') {
             console.log('FAIL to load ' + url);
 	    finishPhantomJS(0);
