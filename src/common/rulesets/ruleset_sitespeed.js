@@ -1208,9 +1208,9 @@ YSLOW.registerRule({
     },
 
     lint: function (doc, cset, config) {
-        var score;
-
+        var score, redirects = [];
         score = 100 - cset.redirects.length * parseInt(config.points, 10);
+        redirects.push(cset.redirects.length.toFixed(0));
 
         return {
             score: score,
@@ -1218,7 +1218,7 @@ YSLOW.registerRule({
                 'There %are% %num% redirect%s%.',
                 cset.redirects.length
             ) + " " + cset.redirects: '',
-            components: []
+            components: redirects
         };
     }
 });
