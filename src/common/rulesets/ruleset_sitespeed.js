@@ -1151,14 +1151,16 @@ YSLOW.registerRule({
     url: 'http://sitespeed.io/rules/#avoidscalingimages',
     category: ['images'],
     config: {
-        // if an image is more than X px in width, punish the page harder
-        reallyBadLimit: 100
+        // if an image is more than X px in width, punish the page
+        reallyBadLimit: 100,
+        // points to take out for every images that is scaled more than config
+        points: 10
         },
 
     lint: function (doc, cset, config) {
         var message = '',
         score, offenders =[],
-        hash = {}, punish = 0,
+        hash = {},
         comps = cset.getComponentsByType('image'),
         images = doc.getElementsByTagName('img');
 
@@ -1166,13 +1168,9 @@ YSLOW.registerRule({
         for(var i = 0; i < images.length; i++){
           var img = images[i];
           // skip images that are 0 (carousell etc)
-          if (img.clientWidth  < img.naturalWidth && img.clientWidth > 0) {
+          if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth && img.clientWidth > 0) {
             message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';
             hash[img.src] = 1;
-
-            // punish hard if the reallyBadLimitExceeds
-            if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth)
-              punish++;
           }
         }
 
@@ -1182,10 +1180,11 @@ YSLOW.registerRule({
           }
         }
 
-        score = 100 - ((offenders.length-punish) * 2) - (punish*10);
+       score = 100 - offenders * parseInt(config.points, 10);
+         console.log("apa4");
         return {
           score: score,
-          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled in the HTML:' + message,offenders.length ) : '',
+          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled more than' +  config.reallyBadLimit + ' pixels in the HTML:' + message,offenders.length ) : '',
           components: offenders
         };
     }
