@@ -1183,7 +1183,7 @@ YSLOW.registerRule({
        score = 100 - offenders.length * parseInt(config.points, 10);
         return {
           score: score,
-          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled more than' +  config.reallyBadLimit + ' pixels in the HTML:' + message,offenders.length ) : '',
+          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled more than ' +  config.reallyBadLimit + ' pixels in the HTML:' + message,offenders.length ) : '',
           components: offenders
         };
     }
