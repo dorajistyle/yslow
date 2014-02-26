@@ -1311,7 +1311,7 @@ YSLOW.registerRuleset({
         inlinecsswhenfewrequest: 7,
         textcontent: 1,
         thirdpartyversions:5,
-        ycdn: 6,
+        ycdn: 6
     }
 
 });
@@ -1401,7 +1401,7 @@ YSLOW.registerRuleset({
         inlinecsswhenfewrequest: 10,
         textcontent: 1,
         thirdpartyversions:5,
-        ycdn: 6,
+        ycdn: 6
     }
 
 });
@@ -1480,7 +1480,7 @@ YSLOW.registerRuleset({
         longexpirehead: 5,
         textcontent: 1,
         thirdpartyversions:5,
-        ycdn: 6,
+        ycdn: 6
     }
 
 });
