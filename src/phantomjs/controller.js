@@ -496,6 +496,12 @@ urls.forEach(function (url) {
     // redirect issue in YSLow.
     page.redirects = [];
 
+    // used for better error messages
+    page.onResourceError = function(resourceError) {
+    page.reason = resourceError.errorString;
+    page.reason_url = resourceError.url;
+    } ;
+
     // request
     page.onResourceRequested = function (req) {
         page.resources[req.url] = {
@@ -595,7 +601,7 @@ urls.forEach(function (url) {
     page.open(url, function (status) {
 
         if (status !== 'success') {
-            console.log('FAIL to load ' + url);
+            console.log('FAIL to load ' + url + ' reason:' + page.reason);
 	    finishPhantomJS(0);
         } else {
 	    setTimeout(function () {
