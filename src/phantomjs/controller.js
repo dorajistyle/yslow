@@ -18,7 +18,7 @@
 // variables for loading Restful web application completely.
 var resourceWait = 1e3,
     maxRenderWait = 1e4,
-    count = 0,
+    noOfResources = 0,
     renderTimeout;
 
 // parse args
@@ -507,7 +507,7 @@ urls.forEach(function (url) {
         page.resources[req.url] = {
             request: req
         };
-        count += 1;
+        noOfResources += 1;
         clearTimeout(renderTimeout)
     };
 
@@ -526,8 +526,8 @@ urls.forEach(function (url) {
                     }
                     page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');
             }
- 	    count -= 1;
-            if (count === 0) renderTimeout = setTimeout(doRender, resourceWait);
+ 	    noOfResources-= 1;
+            if (noOfResources === 0) renderTimeout = setTimeout(doRender, resourceWait);
 	}
         if (!resp) {
             page.resources[res.url].response = res;
