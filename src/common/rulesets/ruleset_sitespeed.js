@@ -299,7 +299,7 @@ YSLOW.registerRule({
   name: 'Avoid slowing down the rendering critical path',
   info: 'Every file loaded inside of head, will postpone the rendering of the page, try to avoid loading javascript synchronously, load files from the same domain as the main document, and inline css for really fast critical path.',
   category: ['content'],
-  config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 5, cssPoints: 5},
+  config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 8, cssPoints: 5},
   url: 'http://sitespeed.io/rules/#criticalpath',
 
   lint: function (doc, cset, config) {
