@@ -511,16 +511,6 @@ urls.forEach(function (url) {
         clearTimeout(renderTimeout)
     };
 
-    page.onUrlChanged = function(targetUrl) {
-    console.log('New URL: ' + targetUrl);
-    if (url === targetUrl)
-        console.log("Frontend redirect!");
-};
-
-    page.onNavigationRequested = function(newUrl, type, willNavigate, main) {
-         console.log('Nav req: ' + newUrl);
-        }
-
     // response
     page.onResourceReceived = function (res) {
         var info,
