@@ -193,6 +193,12 @@ urls.forEach(function (url) {
         }
     };
 
+    // used for better error messages
+    page.onResourceError = function(resourceError) {
+      page.reason = resourceError.errorString;
+      page.reason_url = resourceError.url;
+    };
+
     // enable console output, useful for debugging
     yslowArgs.console = parseInt(yslowArgs.console, 10) || 0;
     if (yslowArgs.console) {
@@ -259,7 +265,7 @@ urls.forEach(function (url) {
             resources = page.resources;
 
         if (status !== 'success') {
-            console.log('FAIL to load ' + url);
+            console.log('FAIL to load ' + url + ' reason:' + page.reason + ' url:' + page.reason_url);
         } else {
             // page load time
             loadTime = new Date() - startTime;
