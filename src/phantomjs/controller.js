@@ -15,12 +15,6 @@
 
 // For using yslow in phantomjs, see instructions @ http://yslow.org/phantomjs/
 
-// variables for loading Restful web application completely.
-var resourceWait = 1e3,
-    maxRenderWait = 1e4,
-    noOfResources = 0,
-    renderTimeout;
-
 // parse args
 var i, arg, page, urlCount, viewport,
     webpage = require('webpage'),
@@ -38,8 +32,7 @@ var i, arg, page, urlCount, viewport,
         console: 0,
         threshold: 80,
         cdns: '',
-        basicauth: '',
-        cookie: undefined
+        basicauth: ''
     },
     unaryArgs = {
         help: false,
@@ -61,8 +54,7 @@ var i, arg, page, urlCount, viewport,
         v: 'verbose',
         t: 'threshold',
         ch: 'headers',
-        ba: 'basicauth',
-        C: 'cookie'
+        ba: 'basicauth'
     };
 
 // loop args
@@ -126,7 +118,6 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -vp, --viewport <WxH>    specify page viewport size WxY, where W = width and H = height [400x300]',
         '    -ch, --headers <JSON>    specify custom request headers, e.g.: -ch \'{"Cookie": "foo=bar"}\'',
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
-        '    -C, --cookie <cookie>    specify an cookie for phantomjs ex) \'{"name":"cookie_name","value":"cookie_value","domain":"localhost"}\'',
         '    --cdns "<list>"          specify comma separated list of additional CDNs',
         '    -ba, --basicauth "<username:password>"          username & password used for basic auth',
         '',
@@ -148,336 +139,8 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
 yslowArgs.dict = unaryArgs.dict;
 yslowArgs.verbose = unaryArgs.verbose;
 
-// add a cookie to phantomjs
-try{
-      cookie = JSON.parse(yslowArgs.cookie,function(k, v){
-        return v;
-      });
-} catch (e) {
-      cookie = undefined;
-}
-if(cookie != undefined) phantom.addCookie(cookie);
-
 // loop through urls
 urls.forEach(function (url) {
-    // finish phantomJS when urlCount is 0
-    function finishPhantomJS(exitStatus) {
-        // finish phantomjs
-	urlCount -= 1;
-  	if (urlCount === 0) {
-	    phantom.exit(exitStatus);
-	}
-    }
-
-    // variables for loading Restful web application completely.
-    function doRender() {
-	    var yslow, ysphantomjs, controller, evalFunc,
-		    loadTime, url, resp, output,
-		    exitStatus = 0,
-		    startTime = page.startTime,
-		    resources = page.resources;
-
-	    // page load time
-	    loadTime = new Date() - startTime;
-
-		    // set resources response time
-		    for (url in resources) {
-			if (resources.hasOwnProperty(url)) {
-			    resp = resources[url].response;
-			    if (resp) {
-				resp.time = new Date(resp.time) - startTime;
-			    }
-			}
-		    }
-
-		    // yslow wrapper to be evaluated by page
-		    yslow = function () {
-			//YSLOW HERE
-		    };
-
-		    // serialize YSlow phantomjs object
-		    // resources, yslow args and page load time
-		    ysphantomjs = 'YSLOW.phantomjs = {' +
-			'resources: ' + JSON.stringify(resources) + ',' +
-			'args: ' + JSON.stringify(yslowArgs) + ',' +
-			'loadTime: ' + JSON.stringify(loadTime) + ',' +
-			'redirects: ' + JSON.stringify(page.redirects)
-			+ '};';
-
-		    // YSlow phantomjs controller
-		    controller = function () {
-			YSLOW.phantomjs.run = function () {
-			    try {
-				var results, xhr, output, threshold,
-				    doc = document,
-				    ys = YSLOW,
-				    yscontext = new ys.context(doc),
-				    yspeeler = ys.peeler,
-				    comps = yspeeler.peel(doc),
-				    baseHref = yspeeler.getBaseHref(doc),
-				    cset = new ys.ComponentSet(doc),
-				    ysphantomjs = ys.phantomjs,
-				    resources = ysphantomjs.resources,
-				    args = ysphantomjs.args,
-				    ysutil = ys.util,
-				    preferences,
-
-				    // format out with appropriate content type
-				    formatOutput = function (content) {
-					var testResults,
-					    format = (args.format || '').toLowerCase(),
-					    harness = {
-						'tap': {
-						    func: ysutil.formatAsTAP,
-						    contentType: 'text/plain'
-						},
-						'junit': {
-						    func: ysutil.formatAsJUnit,
-						    contentType: 'text/xml'
-						}
-					    };
-
-					switch (format) {
-					case 'xml':
-					    return {
-						content: ysutil.objToXML(content),
-						contentType: 'text/xml'
-					    };
-					case 'plain':
-					    return {
-						content: ysutil.prettyPrintResults(
-						    content
-						),
-						contentType: 'text/plain'
-					    };
-					// test formats
-					case 'tap':
-					case 'junit':
-					    try {
-						threshold = JSON.parse(args.threshold);
-					    } catch (err) {
-						threshold = args.threshold;
-					    }
-					    testResults = harness[format].func(
-						ysutil.testResults(
-						    content,
-						    threshold
-						)
-					    );
-					    return {
-						content: testResults.content,
-						contentType: harness[format].contentType,
-						failures: testResults.failures
-					    };
-					default:
-					    return {
-						content: JSON.stringify(content),
-						contentType: 'application/json'
-					    };
-					}
-				    },
-
-				    // format raw headers into object
-				    formatHeaders = function (headers) {
-					var reHeader = /^([^:]+):\s*([\s\S]+)$/,
-					    reLineBreak = /[\n\r]/g,
-					    header = {};
-
-					headers.split('\n').forEach(function (h) {
-					    var m = reHeader.exec(
-						    h.replace(reLineBreak, '')
-						);
-
-					    if (m) {
-						header[m[1]] = m[2];
-					    }
-					});
-
-					return header;
-				    };
-
-				comps.forEach(function (comp) {
-				    var res = resources[comp.href] ||
-					resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
-
-				    // if the component hasn't been fetched by phantomjs but discovered by yslow
-				    if (res.response === undefined) {
-					try {
-					    var headerName, h, i, len, m, startTime, endTime, headers,
-						reHeader = /^([^:]+):\s*([\s\S]+)$/,
-						response = {},
-						request = {};
-
-					    // fetch the asset
-					    xhr = new XMLHttpRequest();
-					    startTime = new Date().getTime();
-					    xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
-					    xhr.send();
-					    endTime = new Date().getTime();
-					    headers = xhr.getAllResponseHeaders();
-					    h = headers.split('\n');
-
-					    // fake the request
-					    request.headers = [];
-					    request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
-					    request.method = 'GET';
-					    request.time = '2013-05-22T20:40:33.381Z';
-
-					    // setup the response
-					    // real values will be added to the component
-					    // from the header
-					    response.bodySize = '-1';
-					    response.contentType = '';
-					    response.headers = [];
-					    response.id = '-1';
-					    response.redirectURL = null;
-					    response.stage = 'end';
-					    response.status = xhr.status;
-					    response.time = endTime - startTime;
-					    response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
-
-					    // get the headers
-					    h = headers.split('\n');
-					    for (i = 0, len = h.length; i < len; i += 1) {
-						m = reHeader.exec(h[i]);
-						if (m) {
-						    response.headers.push({'name': m[1], 'value': m[2]});
-						}
-					    }
-
-					    res.response = response;
-					    res.request = request;
-
-					} catch (err) {
-					    console.log(err);
-					}
-				    }
-
-				    cset.addComponent(
-					comp.href,
-					comp.type,
-					comp.base || baseHref,
-					{
-					    obj: comp.obj,
-					    request: res.request,
-					    response: res.response
-					}
-				    );
-				});
-
-				preferences = new Preferences();
-				preferences.setPref('cdnHostnames', args.cdns);
-				ysutil.Preference.registerNative(preferences);
-
-				// refinement
-				cset.inline = ysutil.getInlineTags(doc);
-				cset.domElementsCount = ysutil.countDOMElements(doc);
-				cset.cookies = cset.doc_comp.cookie;
-				cset.components = ysutil.setInjected(doc,
-				    cset.components, cset.doc_comp.body);
-
-				// hack for sitespeed.io 2.0
-				cset.redirects = ysphantomjs.redirects;
-
-				// run analysis
-				yscontext.component_set = cset;
-				ys.controller.lint(doc, yscontext, args.ruleset);
-				yscontext.result_set.url = baseHref;
-				yscontext.PAGE.t_done = ysphantomjs.loadTime;
-				yscontext.collectStats();
-				results = ysutil.getResults(yscontext, args.info);
-
-				// prepare output results
-				if (args.dict && args.format !== 'plain') {
-				    results.dictionary = ysutil.getDict(args.info,
-					args.ruleset);
-				}
-				output = formatOutput(results);
-
-				// send beacon
-				if (args.beacon) {
-				    try {
-					xhr = new XMLHttpRequest();
-					xhr.onreadystatechange = function () {
-					    // in verbose mode, include
-					    // beacon response info
-					    if (xhr.readyState === 4 && args.verbose) {
-						results.beacon = {
-						    status: xhr.status,
-						    headers: formatHeaders(
-							xhr.getAllResponseHeaders()
-						    ),
-						    body: xhr.responseText
-						};
-						output = formatOutput(results);
-					    }
-					};
-					xhr.open('POST', args.beacon, false);
-					xhr.setRequestHeader('Content-Type',
-					    output.contentType);
-					xhr.send(output.content);
-				    } catch (xhrerr) {
-					// include error on beacon
-					if (args.verbose) {
-					    results.beacon = {
-						error: xhrerr
-					    };
-					    output = formatOutput(results);
-					}
-				    }
-				}
-
-				return output;
-			    } catch (err) {
-				return err;
-			    }
-			};
-
-			// Implement a bare minimum preferences object to be able to use custom CDN URLs
-		function Preferences() {
-		    this.prefs = {};
-		}
-		Preferences.prototype.getPref = function (name, defaultValue) {
-		    return this.prefs.hasOwnProperty(name) ? this.prefs[name] : defaultValue;
-		};
-		Preferences.prototype.setPref = function (name, value) {
-		    this.prefs[name] = value;
-		};
-		Preferences.prototype.deletePref = function (name) {
-		    delete this.prefs[name];
-		};
-		Preferences.prototype.getPrefList = function (branch_name, default_value) {
-		    var values = [], key;
-		    for (key in this.prefs) {
-			if (this.prefs.hasOwnProperty(key) && key.indexOf(branch_name) === 0) {
-			    values.push({ 'name': key, 'value': this.prefs[key] });
-			}
-		    }
-		    return values.length === 0 ? default_value : values;
-		};
-
-		return YSLOW.phantomjs.run();
-	    };
-
-	    // serialize then combine:
-	    // YSlow + page resources + args + loadtime + controller
-	    yslow = yslow.toString();
-	    yslow = yslow.slice(13, yslow.length - 1);
-	    // minification removes last ';'
-	    if (yslow.slice(yslow.length - 1) !== ';') {
-		yslow += ';';
-	    }
-	    controller = controller.toString();
-	    controller = controller.slice(13, controller.length - 1);
-	    evalFunc = new Function(yslow + ysphantomjs + controller);
-
-	    // evaluate script and log results
-	    output = page.evaluate(evalFunc);
-	    exitStatus += output.failures || 0;
-	    console.log(output.content);
-	    finishPhantomJS(exitStatus);
-    }
-
     var page = webpage.create();
 
       // set user agent string
@@ -496,19 +159,11 @@ urls.forEach(function (url) {
     // redirect issue in YSLow.
     page.redirects = [];
 
-    // used for better error messages
-    page.onResourceError = function(resourceError) {
-    page.reason = resourceError.errorString;
-    page.reason_url = resourceError.url;
-    } ;
-
     // request
     page.onResourceRequested = function (req) {
         page.resources[req.url] = {
             request: req
         };
-        noOfResources += 1;
-        clearTimeout(renderTimeout)
     };
 
     // response
@@ -517,7 +172,7 @@ urls.forEach(function (url) {
             resp = page.resources[res.url].response;
 
         //  hack for taking care of redirects
-         if (res.stage === 'end' ) {
+         if (res.stage === 'end' )
             if (res.status === 301 || res.status === 302) {
                 var locationValue;
                 for (var i = 0; i < res.headers.length; i++) {
@@ -526,9 +181,7 @@ urls.forEach(function (url) {
                     }
                     page.redirects.push('From ' + res.url + ' to ' + locationValue + '.');
             }
- 	    noOfResources-= 1;
-            if (noOfResources === 0) renderTimeout = setTimeout(doRender, resourceWait);
-	}
+
         if (!resp) {
             page.resources[res.url].response = res;
         } else {
@@ -538,6 +191,12 @@ urls.forEach(function (url) {
                 }
             }
         }
+    };
+
+    // used for better error messages
+    page.onResourceError = function(resourceError) {
+      page.reason = resourceError.errorString;
+      page.reason_url = resourceError.url;
     };
 
     // enable console output, useful for debugging
@@ -599,15 +258,319 @@ urls.forEach(function (url) {
     // open page
     page.startTime = new Date();
     page.open(url, function (status) {
+        var yslow, ysphantomjs, controller, evalFunc,
+            loadTime, url, resp, output,
+            exitStatus = 0,
+            startTime = page.startTime,
+            resources = page.resources;
 
         if (status !== 'success') {
-            console.log('FAIL to load ' + url + ' reason:' + page.reason);
-	    finishPhantomJS(0);
+            console.log('FAIL to load ' + url + ' reason:' + page.reason + ' url:' + page.reason_url);
         } else {
-	    setTimeout(function () {
-                doRender()
-            }, maxRenderWait);
+            // page load time
+            loadTime = new Date() - startTime;
+
+            // set resources response time
+            for (url in resources) {
+                if (resources.hasOwnProperty(url)) {
+                    resp = resources[url].response;
+                    if (resp) {
+                        resp.time = new Date(resp.time) - startTime;
+                    }
+                }
+            }
+
+            // yslow wrapper to be evaluated by page
+            yslow = function () {
+                //YSLOW HERE
+            };
+
+            // serialize YSlow phantomjs object
+            // resources, yslow args and page load time
+            ysphantomjs = 'YSLOW.phantomjs = {' +
+                'resources: ' + JSON.stringify(resources) + ',' +
+                'args: ' + JSON.stringify(yslowArgs) + ',' +
+                'loadTime: ' + JSON.stringify(loadTime) + ',' +
+                'redirects: ' + JSON.stringify(page.redirects)
+                + '};';
+
+            // YSlow phantomjs controller
+            controller = function () {
+                YSLOW.phantomjs.run = function () {
+                    try {
+                        var results, xhr, output, threshold,
+                            doc = document,
+                            ys = YSLOW,
+                            yscontext = new ys.context(doc),
+                            yspeeler = ys.peeler,
+                            comps = yspeeler.peel(doc),
+                            baseHref = yspeeler.getBaseHref(doc),
+                            cset = new ys.ComponentSet(doc),
+                            ysphantomjs = ys.phantomjs,
+                            resources = ysphantomjs.resources,
+                            args = ysphantomjs.args,
+                            ysutil = ys.util,
+                            preferences,
+
+                            // format out with appropriate content type
+                            formatOutput = function (content) {
+                                var testResults,
+                                    format = (args.format || '').toLowerCase(),
+                                    harness = {
+                                        'tap': {
+                                            func: ysutil.formatAsTAP,
+                                            contentType: 'text/plain'
+                                        },
+                                        'junit': {
+                                            func: ysutil.formatAsJUnit,
+                                            contentType: 'text/xml'
+                                        }
+                                    };
+
+                                switch (format) {
+                                case 'xml':
+                                    return {
+                                        content: ysutil.objToXML(content),
+                                        contentType: 'text/xml'
+                                    };
+                                case 'plain':
+                                    return {
+                                        content: ysutil.prettyPrintResults(
+                                            content
+                                        ),
+                                        contentType: 'text/plain'
+                                    };
+                                // test formats
+                                case 'tap':
+                                case 'junit':
+                                    try {
+                                        threshold = JSON.parse(args.threshold);
+                                    } catch (err) {
+                                        threshold = args.threshold;
+                                    }
+                                    testResults = harness[format].func(
+                                        ysutil.testResults(
+                                            content,
+                                            threshold
+                                        )
+                                    );
+                                    return {
+                                        content: testResults.content,
+                                        contentType: harness[format].contentType,
+                                        failures: testResults.failures
+                                    };
+                                default:
+                                    return {
+                                        content: JSON.stringify(content),
+                                        contentType: 'application/json'
+                                    };
+                                }
+                            },
+
+                            // format raw headers into object
+                            formatHeaders = function (headers) {
+                                var reHeader = /^([^:]+):\s*([\s\S]+)$/,
+                                    reLineBreak = /[\n\r]/g,
+                                    header = {};
+
+                                headers.split('\n').forEach(function (h) {
+                                    var m = reHeader.exec(
+                                            h.replace(reLineBreak, '')
+                                        );
+
+                                    if (m) {
+                                        header[m[1]] = m[2];
+                                    }
+                                });
+
+                                return header;
+                            };
+
+                        comps.forEach(function (comp) {
+                            var res = resources[comp.href] ||
+                                resources[ys.util.makeAbsoluteUrl(comp.href, comp.base)] || {};
+
+                            // if the component hasn't been fetched by phantomjs but discovered by yslow
+                            if (res.response === undefined) {
+                                try {
+                                    var headerName, h, i, len, m, startTime, endTime, headers,
+                                        reHeader = /^([^:]+):\s*([\s\S]+)$/,
+                                        response = {},
+                                        request = {};
+
+                                    // fetch the asset
+                                    xhr = new XMLHttpRequest();
+                                    startTime = new Date().getTime();
+                                    xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
+                                    xhr.send();
+                                    endTime = new Date().getTime();
+                                    headers = xhr.getAllResponseHeaders();
+                                    h = headers.split('\n');
+
+                                    // fake the request
+                                    request.headers = [];
+                                    request.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+                                    request.method = 'GET';
+                                    request.time = '2013-05-22T20:40:33.381Z';
+
+                                    // setup the response
+                                    // real values will be added to the component
+                                    // from the header
+                                    response.bodySize = '-1';
+                                    response.contentType = '';
+                                    response.headers = [];
+                                    response.id = '-1';
+                                    response.redirectURL = null;
+                                    response.stage = 'end';
+                                    response.status = xhr.status;
+                                    response.time = endTime - startTime;
+                                    response.url = ys.util.makeAbsoluteUrl(comp.href, comp.base);
+
+                                    // get the headers
+                                    h = headers.split('\n');
+                                    for (i = 0, len = h.length; i < len; i += 1) {
+                                        m = reHeader.exec(h[i]);
+                                        if (m) {
+                                            response.headers.push({'name': m[1], 'value': m[2]});
+                                        }
+                                    }
+
+                                    res.response = response;
+                                    res.request = request;
+
+                                } catch (err) {
+                                    console.log(err);
+                                }
+                            }
+
+                            cset.addComponent(
+                                comp.href,
+                                comp.type,
+                                comp.base || baseHref,
+                                {
+                                    obj: comp.obj,
+                                    request: res.request,
+                                    response: res.response
+                                }
+                            );
+                        });
+
+                        preferences = new Preferences();
+                        preferences.setPref('cdnHostnames', args.cdns);
+                        ysutil.Preference.registerNative(preferences);
+
+                        // refinement
+                        cset.inline = ysutil.getInlineTags(doc);
+                        cset.domElementsCount = ysutil.countDOMElements(doc);
+                        cset.cookies = cset.doc_comp.cookie;
+                        cset.components = ysutil.setInjected(doc,
+                            cset.components, cset.doc_comp.body);
+
+                        // hack for sitespeed.io 2.0
+                        cset.redirects = ysphantomjs.redirects;
+
+                        // run analysis
+                        yscontext.component_set = cset;
+                        ys.controller.lint(doc, yscontext, args.ruleset);
+                        yscontext.result_set.url = baseHref;
+                        yscontext.PAGE.t_done = ysphantomjs.loadTime;
+                        yscontext.collectStats();
+                        results = ysutil.getResults(yscontext, args.info);
+
+                        // prepare output results
+                        if (args.dict && args.format !== 'plain') {
+                            results.dictionary = ysutil.getDict(args.info,
+                                args.ruleset);
+                        }
+                        output = formatOutput(results);
+
+                        // send beacon
+                        if (args.beacon) {
+                            try {
+                                xhr = new XMLHttpRequest();
+                                xhr.onreadystatechange = function () {
+                                    // in verbose mode, include
+                                    // beacon response info
+                                    if (xhr.readyState === 4 && args.verbose) {
+                                        results.beacon = {
+                                            status: xhr.status,
+                                            headers: formatHeaders(
+                                                xhr.getAllResponseHeaders()
+                                            ),
+                                            body: xhr.responseText
+                                        };
+                                        output = formatOutput(results);
+                                    }
+                                };
+                                xhr.open('POST', args.beacon, false);
+                                xhr.setRequestHeader('Content-Type',
+                                    output.contentType);
+                                xhr.send(output.content);
+                            } catch (xhrerr) {
+                                // include error on beacon
+                                if (args.verbose) {
+                                    results.beacon = {
+                                        error: xhrerr
+                                    };
+                                    output = formatOutput(results);
+                                }
+                            }
+                        }
+
+                        return output;
+                    } catch (err) {
+                        return err;
+                    }
+                };
+
+                // Implement a bare minimum preferences object to be able to use custom CDN URLs
+                function Preferences() {
+                    this.prefs = {};
+                }
+                Preferences.prototype.getPref = function (name, defaultValue) {
+                    return this.prefs.hasOwnProperty(name) ? this.prefs[name] : defaultValue;
+                };
+                Preferences.prototype.setPref = function (name, value) {
+                    this.prefs[name] = value;
+                };
+                Preferences.prototype.deletePref = function (name) {
+                    delete this.prefs[name];
+                };
+                Preferences.prototype.getPrefList = function (branch_name, default_value) {
+                    var values = [], key;
+                    for (key in this.prefs) {
+                        if (this.prefs.hasOwnProperty(key) && key.indexOf(branch_name) === 0) {
+                            values.push({ 'name': key, 'value': this.prefs[key] });
+                        }
+                    }
+                    return values.length === 0 ? default_value : values;
+                };
+
+                return YSLOW.phantomjs.run();
+            };
+
+            // serialize then combine:
+            // YSlow + page resources + args + loadtime + controller
+            yslow = yslow.toString();
+            yslow = yslow.slice(13, yslow.length - 1);
+            // minification removes last ';'
+            if (yslow.slice(yslow.length - 1) !== ';') {
+                yslow += ';';
+            }
+            controller = controller.toString();
+            controller = controller.slice(13, controller.length - 1);
+            evalFunc = new Function(yslow + ysphantomjs + controller);
+
+            // evaluate script and log results
+            output = page.evaluate(evalFunc);
+            exitStatus += output.failures || 0;
+            console.log(output.content);
         }
 
+        // finish phantomjs
+        urlCount -= 1;
+        if (urlCount === 0) {
+            phantom.exit(exitStatus);
+        }
     });
 });
