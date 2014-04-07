@@ -402,8 +402,7 @@ YSLOW.registerRule({
 
 
     var types = ['js', 'css', 'image', 'cssimage', 'font', 'flash', 'favicon', 'doc','iframe'];
-    var comps = cset.getComponentsByType(types);
-    var score = 100;
+    var comps = cset.getComponentsByType(types), score = 100, empty = [];
 
     if (comps.length < 26) {
       score = 100;
@@ -417,7 +416,7 @@ YSLOW.registerRule({
     var message = score === 100 ? '' :
       'The page uses ' + comps.length +
         ' requests, that is too many to make the page load fast.';
-    var offenders = score === 100 ? '' : comps;
+    var offenders = score === 100 ? empty : comps;
 
     return {
       score: score,
