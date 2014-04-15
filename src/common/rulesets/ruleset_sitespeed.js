@@ -586,7 +586,7 @@ YSLOW.registerRule({
         // how many points to take for each component without Expires header
         points: 11,
         // component types to be inspected for expires headers
-        types: ['css', 'js', 'image', 'cssimage', 'flash','favicon'],
+        types: ['css', 'js', 'image', 'cssimage', 'flash','favicon']
     },
 
     lint: function (doc, cset, config) {
@@ -847,7 +847,7 @@ YSLOW3PO.is3p = function (url) {
     }
   }
   return false;
-}
+};
 
 
 YSLOW.registerRule({
