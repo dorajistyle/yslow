@@ -199,7 +199,13 @@ urls.forEach(function (url) {
       page.reason_url = resourceError.url;
     };
 
+    // supressing all errors for now
+    page.onConsoleMessage = function (msg){};
+    page.onAlert = function (msg) {};
+    page.onError = function(msg, trace) {};
+
     // enable console output, useful for debugging
+    /*
     yslowArgs.console = parseInt(yslowArgs.console, 10) || 0;
     if (yslowArgs.console) {
         if (yslowArgs.console === 1) {
@@ -229,6 +235,7 @@ urls.forEach(function (url) {
             // catch uncaught error from the page
         };
     }
+    */
 
     // set user agent string
     if (yslowArgs.ua) {
