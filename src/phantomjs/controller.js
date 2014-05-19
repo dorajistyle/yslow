@@ -581,6 +581,7 @@ urls.forEach(function (url) {
                 fs.write(yslowArgs.file, output.content, 'w');
               } catch(e) {
               console.log(e);
+              exitStatus += 1;
               }
             }
             else
