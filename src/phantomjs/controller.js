@@ -583,7 +583,8 @@ urls.forEach(function (url) {
               console.log(e);
               }
             }
-            console.log(output.content);
+            else
+              console.log(output.content);
         }
 
         // finish phantomjs
