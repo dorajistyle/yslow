@@ -32,6 +32,7 @@ var i, arg, page, urlCount, viewport,
         console: 0,
         threshold: 80,
         cdns: '',
+        file:'',
         basicauth: ''
     },
     unaryArgs = {
@@ -120,6 +121,7 @@ if (len === 0 || urlCount === 0 || unaryArgs.help) {
         '    -c, --console <level>    output page console messages (0: none, 1: message, 2: message + line + source) [0]',
         '    --cdns "<list>"          specify comma separated list of additional CDNs',
         '    -ba, --basicauth "<username:password>"          username & password used for basic auth',
+        '    --file <filename>        output the result to file',
         '',
         '  Examples:',
         '',
@@ -200,12 +202,13 @@ urls.forEach(function (url) {
     };
 
     // supressing all errors for now
+    /*
     page.onConsoleMessage = function (msg){};
     page.onAlert = function (msg) {};
     page.onError = function(msg, trace) {};
-
+    */
     // enable console output, useful for debugging
-    /*
+
     yslowArgs.console = parseInt(yslowArgs.console, 10) || 0;
     if (yslowArgs.console) {
         if (yslowArgs.console === 1) {
@@ -235,7 +238,7 @@ urls.forEach(function (url) {
             // catch uncaught error from the page
         };
     }
-    */
+
 
     // set user agent string
     if (yslowArgs.ua) {
@@ -571,6 +574,15 @@ urls.forEach(function (url) {
             // evaluate script and log results
             output = page.evaluate(evalFunc);
             exitStatus += output.failures || 0;
+
+            if (yslowArgs.file) {
+              var fs = require('fs');
+              try {
+                fs.write(yslowArgs.file, output.content, 'w');
+              } catch(e) {
+              console.log(e);
+              }
+            }
             console.log(output.content);
         }
 
