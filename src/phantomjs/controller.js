@@ -407,11 +407,15 @@ urls.forEach(function (url) {
                                         reHeader = /^([^:]+):\s*([\s\S]+)$/,
                                         response = {},
                                         request = {};
-
                                     // fetch the asset
                                     xhr = new XMLHttpRequest();
                                     startTime = new Date().getTime();
                                     xhr.open('GET', ys.util.makeAbsoluteUrl(comp.href, comp.base), false);
+                                    if (args.ua) {
+                                        xhr.setRequestHeader('User-Agent',args.ua);
+                                    }
+                                    // xhr.setRequestHeader('Access-Control-Request-Method','GET');
+                                    // xhr.setRequestHeader('Origin',baseHref);
                                     xhr.send();
                                     endTime = new Date().getTime();
                                     headers = xhr.getAllResponseHeaders();
