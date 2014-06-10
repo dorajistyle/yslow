@@ -299,7 +299,7 @@ YSLOW.registerRule({
   name: 'Avoid slowing down the rendering critical path',
   info: 'Every file loaded inside of head, will postpone the rendering of the page, try to avoid loading javascript synchronously, load files from the same domain as the main document, and inline css for really fast critical path.',
   category: ['content'],
-  config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 5, cssPoints: 5},
+  config: {synchronouslyJSPoints: 10, deferJSPoints: 3, dnsLookupsPoints: 8, cssPoints: 5},
   url: 'http://sitespeed.io/rules/#criticalpath',
 
   lint: function (doc, cset, config) {
@@ -402,8 +402,7 @@ YSLOW.registerRule({
 
 
     var types = ['js', 'css', 'image', 'cssimage', 'font', 'flash', 'favicon', 'doc','iframe'];
-    var comps = cset.getComponentsByType(types);
-    var score = 100;
+    var comps = cset.getComponentsByType(types), score = 100, empty = [];
 
     if (comps.length < 26) {
       score = 100;
@@ -417,7 +416,7 @@ YSLOW.registerRule({
     var message = score === 100 ? '' :
       'The page uses ' + comps.length +
         ' requests, that is too many to make the page load fast.';
-    var offenders = score === 100 ? '' : comps;
+    var offenders = score === 100 ? empty : comps;
 
     return {
       score: score,
@@ -587,7 +586,7 @@ YSLOW.registerRule({
         // how many points to take for each component without Expires header
         points: 11,
         // component types to be inspected for expires headers
-        types: ['css', 'js', 'image', 'cssimage', 'flash','favicon'],
+        types: ['css', 'js', 'image', 'cssimage', 'flash','favicon']
     },
 
     lint: function (doc, cset, config) {
@@ -706,7 +705,7 @@ YSLOW.registerRule({
   name: 'Do not load css files when the page has few request',
   info: 'When a page has few requests, it is better to inline the css, to make the page to start render as early as possible',
   category: ['css'],
-  config: {points: 20, limit: 15,  types: ['css', 'js', 'image', 'cssimage', 'flash', 'favicon']},
+  config: {points: 20, limit: 15,  types: ['css', 'js', 'image', 'cssimage', 'flash', 'font','favicon']},
   url: 'http://sitespeed.io/rules/#inlinecsswhenfewrequest',
 
   lint: function (doc, cset, config) {
@@ -848,7 +847,7 @@ YSLOW3PO.is3p = function (url) {
     }
   }
   return false;
-}
+};
 
 
 YSLOW.registerRule({
@@ -1151,14 +1150,16 @@ YSLOW.registerRule({
     url: 'http://sitespeed.io/rules/#avoidscalingimages',
     category: ['images'],
     config: {
-        // if an image is more than X px in width, punish the page harder
-        reallyBadLimit: 100
+        // if an image is more than X px in width, punish the page
+        reallyBadLimit: 100,
+        // points to take out for every images that is scaled more than config
+        points: 10
         },
 
     lint: function (doc, cset, config) {
         var message = '',
         score, offenders =[],
-        hash = {}, punish = 0,
+        hash = {},
         comps = cset.getComponentsByType('image'),
         images = doc.getElementsByTagName('img');
 
@@ -1166,13 +1167,9 @@ YSLOW.registerRule({
         for(var i = 0; i < images.length; i++){
           var img = images[i];
           // skip images that are 0 (carousell etc)
-          if (img.clientWidth  < img.naturalWidth && img.clientWidth > 0) {
+          if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth && img.clientWidth > 0) {
             message = message + ' ' + img.src + ' [browserWidth:' + img.clientWidth + ' realImageWidth: ' + img.naturalWidth + ']';
             hash[img.src] = 1;
-
-            // punish hard if the reallyBadLimitExceeds
-            if ((img.clientWidth + config.reallyBadLimit) < img.naturalWidth)
-              punish++;
           }
         }
 
@@ -1182,10 +1179,10 @@ YSLOW.registerRule({
           }
         }
 
-        score = 100 - ((offenders.length-punish) * 2) - (punish*10);
+       score = 100 - offenders.length * parseInt(config.points, 10);
         return {
           score: score,
-          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled in the HTML:' + message,offenders.length ) : '',
+          message: (offenders.length > 0) ? YSLOW.util.plural('You have %num% image%s% that %are% scaled more than ' +  config.reallyBadLimit + ' pixels in the HTML:' + message,offenders.length ) : '',
           components: offenders
         };
     }
@@ -1208,9 +1205,9 @@ YSLOW.registerRule({
     },
 
     lint: function (doc, cset, config) {
-        var score;
-
+        var score, redirects = [];
         score = 100 - cset.redirects.length * parseInt(config.points, 10);
+        redirects.push(cset.redirects.length.toFixed(0));
 
         return {
             score: score,
@@ -1218,7 +1215,7 @@ YSLOW.registerRule({
                 'There %are% %num% redirect%s%.',
                 cset.redirects.length
             ) + " " + cset.redirects: '',
-            components: []
+            components: redirects
         };
     }
 });
@@ -1269,7 +1266,9 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
+
     },
     weights: {
         criticalpath: 15,
@@ -1310,7 +1309,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests: 8,
         inlinecsswhenfewrequest: 7,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6
     }
 
 });
@@ -1357,7 +1357,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests:{},
         inlinecsswhenfewrequest:{},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
     },
     weights: {
         criticalpath: 20,
@@ -1398,7 +1399,8 @@ YSLOW.registerRuleset({
         nodnslookupswhenfewrequests: 15,
         inlinecsswhenfewrequest: 10,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6
     }
 
 });
@@ -1440,7 +1442,8 @@ YSLOW.registerRuleset({
         expiresmod: {},
         longexpirehead: {},
         textcontent: {},
-        thirdpartyversions: {}
+        thirdpartyversions: {},
+        ycdn: {}
     },
     weights: {
         criticalpath: 15,
@@ -1475,7 +1478,8 @@ YSLOW.registerRuleset({
         expiresmod: 10,
         longexpirehead: 5,
         textcontent: 1,
-        thirdpartyversions:5
+        thirdpartyversions:5,
+        ycdn: 6
     }
 
 });
