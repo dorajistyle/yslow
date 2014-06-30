@@ -1,6 +1,7 @@
 YSlow
 =====
 
+Custom Cookie handler added to PhantomJS.
 YSlow analyzes web pages and suggests ways to improve their performance based on a set of [rules for high performance web pages](http://developer.yahoo.com/performance/rules.html).
 
 ### Building
